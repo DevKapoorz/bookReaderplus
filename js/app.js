@@ -65,6 +65,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     onZoomChange: (pct) => {
       zoomIndicatorPill.textContent = `${pct}%`;
       annotationManager.render();
+    },
+    onPanChange: () => {
+      annotationManager.render();
     }
   });
 
@@ -347,6 +350,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
       e.preventDefault();
       flipbook.turnPrev();
+    } else if (e.key === 'ArrowUp') {
+      if (flipbook.zoom > 1.05) {
+        e.preventDefault();
+        flipbook.panBy(0, 60); // Navigate up
+      }
+    } else if (e.key === 'ArrowDown') {
+      if (flipbook.zoom > 1.05) {
+        e.preventDefault();
+        flipbook.panBy(0, -60); // Navigate down
+      }
     } else if (e.key === 'd' || e.key === 'D') {
       btnToggleDarkMode.click();
     } else if (e.key === 'v' || e.key === 'V') {
