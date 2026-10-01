@@ -133,8 +133,8 @@ class FlipbookEngine {
         const screenW = window.innerWidth;
         const screenH = window.innerHeight;
 
-        const padX = Math.max(36, Math.min(60, Math.floor(screenW * 0.04)));
-        const padY = Math.max(28, Math.min(48, Math.floor(screenH * 0.04)));
+        const padX = Math.max(18, Math.min(18, Math.floor(screenW * 0.04)));
+        const padY = Math.max(14, Math.min(14, Math.floor(screenH * 0.04)));
 
         const canvasW = Math.max(300, screenW - padX * 2);
         const canvasH = Math.max(300, screenH - padY * 2);
