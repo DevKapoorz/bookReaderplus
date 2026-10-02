@@ -245,12 +245,25 @@ class FlipbookEngine {
         // Distance to place buttons completely outside the book edge
         const buttonOffset = 32;
 
-        const transformedLeft =
+        let transformedLeft =
             centerX + this.panX + (leftEdge - centerX) * this.zoom - buttonOffset;
-        const transformedRight =
+        let transformedRight =
             centerX + this.panX + (rightEdge - centerX) * this.zoom + buttonOffset;
-        const transformedCenterY =
+        let transformedCenterY =
             middleY + this.panY + (centerY - middleY) * this.zoom;
+
+        // Clamp positions to visible viewport so buttons never cross the webpage or become invisible with zoom
+        const rect = this.canvas.getBoundingClientRect();
+        const screenMargin = 28; // Margin from the visible viewport edge
+
+        const minVisibleX = screenMargin - rect.left;
+        const maxVisibleX = window.innerWidth - rect.left - screenMargin;
+        const minVisibleY = screenMargin - rect.top;
+        const maxVisibleY = window.innerHeight - rect.top - screenMargin;
+
+        transformedLeft = Math.max(minVisibleX, Math.min(maxVisibleX, transformedLeft));
+        transformedRight = Math.max(minVisibleX, Math.min(maxVisibleX, transformedRight));
+        transformedCenterY = Math.max(minVisibleY, Math.min(maxVisibleY, transformedCenterY));
 
         btnPrev.style.left = `${Math.round(transformedLeft)}px`;
         btnPrev.style.top = `${Math.round(transformedCenterY)}px`;
