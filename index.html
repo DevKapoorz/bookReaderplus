@@ -70,23 +70,23 @@
 
     <!-- Center Book Viewport -->
     <main class="book-viewport" id="bookViewport">
-      <!-- Highly transparent button on left extreme of book -->
-      <button class="extreme-turn-btn left" id="btnTurnPrevExtreme" data-tooltip="Previous Page" aria-label="Previous Page">
-        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
-      </button>
-
       <!-- Canvases Stage -->
       <div class="book-canvas-stage" id="bookCanvasStage">
         <!-- Main canvas for book rendering, spine shadow, and page peeling animation -->
         <canvas id="bookCanvas"></canvas>
         <!-- Overlay canvas for vector annotations & drawing tools -->
         <canvas id="annotationCanvas"></canvas>
-      </div>
 
-      <!-- Highly transparent button on right extreme of book -->
-      <button class="extreme-turn-btn right" id="btnTurnNextExtreme" data-tooltip="Next Page" aria-label="Next Page">
-        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
-      </button>
+        <!-- Previous Page Circular Button -->
+        <button class="extreme-turn-btn left" id="btnTurnPrevExtreme" data-tooltip="Previous Page" aria-label="Previous Page">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        </button>
+
+        <!-- Next Page Circular Button -->
+        <button class="extreme-turn-btn right" id="btnTurnNextExtreme" data-tooltip="Next Page" aria-label="Next Page">
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
     </main>
 
     <!-- Bottom Reading Bar (Page indicator & scrubber) -->

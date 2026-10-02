@@ -202,7 +202,58 @@ class FlipbookEngine {
             this.bookY = Math.floor((canvasH - this.pageHeight) / 2);
         }
 
+        this.updateTurnButtonPositions();
         this.render();
+    }
+
+    updateTurnButtonPositions() {
+        const btnPrev = document.getElementById("btnTurnPrevExtreme");
+        const btnNext = document.getElementById("btnTurnNextExtreme");
+        if (!btnPrev || !btnNext) return;
+
+        const w = this.stageWidth;
+        const h = this.stageHeight;
+        const bx = this.bookX;
+        const by = this.bookY;
+        const pw = this.pageWidth;
+        const ph = this.pageHeight;
+
+        let leftEdge, rightEdge;
+
+        if (this.isTwoPage) {
+            if (this.currentPage === 1) {
+                // Two-page view on Page 1 (cover on right side)
+                leftEdge = bx + pw;
+                rightEdge = bx + pw * 2;
+            } else {
+                // Two-page spread
+                leftEdge = bx;
+                rightEdge = bx + pw * 2;
+            }
+        } else {
+            // One-page view
+            leftEdge = bx;
+            rightEdge = bx + pw;
+        }
+
+        const centerY = by + ph / 2;
+
+        // Apply current zoom and pan transformations so buttons follow page edges exactly
+        const centerX = w / 2;
+        const middleY = h / 2;
+
+        const transformedLeft =
+            centerX + this.panX + (leftEdge - centerX) * this.zoom;
+        const transformedRight =
+            centerX + this.panX + (rightEdge - centerX) * this.zoom;
+        const transformedCenterY =
+            middleY + this.panY + (centerY - middleY) * this.zoom;
+
+        btnPrev.style.left = `${Math.round(transformedLeft)}px`;
+        btnPrev.style.top = `${Math.round(transformedCenterY)}px`;
+
+        btnNext.style.left = `${Math.round(transformedRight)}px`;
+        btnNext.style.top = `${Math.round(transformedCenterY)}px`;
     }
 
     // =========================================================================
@@ -971,6 +1022,7 @@ class FlipbookEngine {
             e.preventDefault();
             this.panX -= e.deltaX * 0.8;
             this.panY -= e.deltaY * 0.8;
+            this.updateTurnButtonPositions();
             this.render();
             if (typeof this.onPanChange === "function") {
                 this.onPanChange();
@@ -1013,6 +1065,7 @@ class FlipbookEngine {
     panBy(dx, dy) {
         this.panX += dx;
         this.panY += dy;
+        this.updateTurnButtonPositions();
         this.render();
         if (typeof this.onPanChange === "function") {
             this.onPanChange();
@@ -1027,6 +1080,7 @@ class FlipbookEngine {
             this.panX = 0;
             this.panY = 0;
         }
+        this.updateTurnButtonPositions();
         this.render();
         this.onZoomChange(Math.round(this.zoom * 100));
         if (typeof this.onPanChange === "function") {
@@ -1038,6 +1092,7 @@ class FlipbookEngine {
         this.zoom = 1.0;
         this.panX = 0;
         this.panY = 0;
+        this.updateTurnButtonPositions();
         this.render();
         this.onZoomChange(100);
         if (typeof this.onPanChange === "function") {
