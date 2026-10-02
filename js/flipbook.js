@@ -645,24 +645,13 @@ class FlipbookEngine {
             if (isFrontVisible) {
                 // Front face curling up (compressed horizontally)
                 ctx.save();
-                ctx.beginPath();
-                ctx.rect(spineX, y, visibleWidth, ph);
-                ctx.clip();
 
                 // Skew & scale perspective
                 const scaleX = 1 - 2 * progress;
                 ctx.translate(spineX, y);
                 ctx.scale(scaleX, 1);
                 this.drawPageContent(ctx, frontPageNum, 0, 0, pw, ph);
-
-                // Cylinder reflection gradient on curling page
-                const curlGrad = ctx.createLinearGradient(0, 0, pw, 0);
-                curlGrad.addColorStop(0, "rgba(0, 0, 0, 0.15)");
-                curlGrad.addColorStop(0.7, "rgba(255, 255, 255, 0.15)");
-                curlGrad.addColorStop(1, "rgba(0, 0, 0, 0.35)");
-                ctx.fillStyle = curlGrad;
-                ctx.fillRect(0, 0, pw, ph);
-
+                
                 ctx.restore();
             } else {
                 // Back of page curling over to the left side
@@ -685,14 +674,6 @@ class FlipbookEngine {
                 } else {
                     this.drawBlankPage(ctx, 0, 0, pw, ph, isDark);
                 }
-
-                // Gradient shadow on reverse face
-                const backGrad = ctx.createLinearGradient(0, 0, pw, 0);
-                backGrad.addColorStop(0, "rgba(0,0,0,0.25)");
-                backGrad.addColorStop(0.6, "rgba(255,255,255,0.08)");
-                backGrad.addColorStop(1, "rgba(0,0,0,0.2)");
-                ctx.fillStyle = backGrad;
-                ctx.fillRect(0, 0, pw, ph);
 
                 ctx.restore();
             }
