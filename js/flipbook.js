@@ -57,6 +57,7 @@ class FlipbookEngine {
         // Callbacks
         this.onPageChange = options.onPageChange || (() => {});
         this.onZoomChange = options.onZoomChange || (() => {});
+        this.onPanChange = options.onPanChange || (() => {});
 
         // Bind Event Handlers
         this.bindEvents();
@@ -171,7 +172,7 @@ class FlipbookEngine {
         const availW = canvasW - innerMargin * 2;
         const availH = canvasH - innerMargin * 2;
 
-        if (this.isTwoPage && this.currentPage > 1) {
+        if (this.isTwoPage) {
             // Two-page spread: width = 2 * pageWidth
             let pHeight = availH;
             let pWidth = pHeight / aspect;
@@ -186,7 +187,7 @@ class FlipbookEngine {
             this.bookX = Math.floor((canvasW - this.pageWidth * 2) / 2);
             this.bookY = Math.floor((canvasH - this.pageHeight) / 2);
         } else {
-            // Single page view OR Cover page (Page 1 is single centered)
+            // Single page view (centered single page)
             let pHeight = availH;
             let pWidth = pHeight / aspect;
 
@@ -406,22 +407,7 @@ class FlipbookEngine {
     renderStaticBook(ctx) {
         const isDark = document.body.classList.contains("dark-mode");
 
-        // Case 1: Cover Page (Single page centered like a closed book)
-        if (this.isCoverPage() || (!this.isTwoPage && this.currentPage === 1)) {
-            this.drawSingleBookPage(
-                ctx,
-                this.bookX,
-                this.bookY,
-                this.pageWidth,
-                this.pageHeight,
-                1,
-                "cover",
-                isDark,
-            );
-            return;
-        }
-
-        // Case 2: One-Page View Mode
+        // Case 1: One-Page View Mode (Single centered page)
         if (!this.isTwoPage) {
             this.drawSingleBookPage(
                 ctx,
@@ -430,13 +416,34 @@ class FlipbookEngine {
                 this.pageWidth,
                 this.pageHeight,
                 this.currentPage,
-                "single",
+                this.currentPage === 1 ? "cover" : "single",
                 isDark,
             );
             return;
         }
 
-        // Case 3: Two-Page Spread
+        // Case 2: Two-Page View Mode - First Page (Right side of the two-page spread)
+        if (this.currentPage === 1) {
+            const bx = this.bookX;
+            const by = this.bookY;
+            const pw = this.pageWidth;
+            const ph = this.pageHeight;
+
+            // Page 1 rendered on the right side of the spread
+            this.drawSingleBookPage(
+                ctx,
+                bx + pw,
+                by,
+                pw,
+                ph,
+                1,
+                "cover",
+                isDark,
+            );
+            return;
+        }
+
+        // Case 3: Two-Page Spread (Pages 2+)
         const spread = this.getSpreadPages();
         const bx = this.bookX;
         const by = this.bookY;
@@ -507,14 +514,14 @@ class FlipbookEngine {
         const by = this.bookY;
 
         // Draw background book base
-        if (this.isTwoPage && this.currentPage > 1) {
+        if (this.isTwoPage) {
             this.drawBookShadow(ctx, bx, by, pw * 2, ph);
             this.drawPaperStackEdges(ctx, bx, by, pw * 2, ph, isDark);
         } else {
             this.drawBookShadow(ctx, bx, by, pw, ph);
         }
 
-        const spineX = this.isTwoPage && this.currentPage > 1 ? bx + pw : bx;
+        const spineX = this.isTwoPage ? bx + pw : bx;
 
         if (dir > 0) {
             // Flipping forward: Right page curls towards left
@@ -883,7 +890,7 @@ class FlipbookEngine {
         const pos = this.getPointerPos(e);
         const bx = this.bookX;
         const pw = this.pageWidth;
-        const isTwo = this.isTwoPage && this.currentPage > 1;
+        const isTwo = this.isTwoPage;
         const bookWidth = isTwo ? pw * 2 : pw;
 
         // Check if clicked near right page edge or left page edge
@@ -997,6 +1004,9 @@ class FlipbookEngine {
             this.panX -= e.deltaX * 0.8;
             this.panY -= e.deltaY * 0.8;
             this.render();
+            if (typeof this.onPanChange === "function") {
+                this.onPanChange();
+            }
         }
     }
 
@@ -1032,6 +1042,15 @@ class FlipbookEngine {
         }
     }
 
+    panBy(dx, dy) {
+        this.panX += dx;
+        this.panY += dy;
+        this.render();
+        if (typeof this.onPanChange === "function") {
+            this.onPanChange();
+        }
+    }
+
     setZoom(val) {
         const oldZoom = this.zoom;
         this.zoom = Math.max(this.minZoom, Math.min(this.maxZoom, val));
@@ -1042,6 +1061,9 @@ class FlipbookEngine {
         }
         this.render();
         this.onZoomChange(Math.round(this.zoom * 100));
+        if (typeof this.onPanChange === "function") {
+            this.onPanChange();
+        }
     }
 
     resetZoom() {
@@ -1050,6 +1072,9 @@ class FlipbookEngine {
         this.panY = 0;
         this.render();
         this.onZoomChange(100);
+        if (typeof this.onPanChange === "function") {
+            this.onPanChange();
+        }
     }
 }
 
