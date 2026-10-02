@@ -674,8 +674,8 @@ class FlipbookEngine {
                 ctx.clip();
 
                 const scaleX = 2 * progress - 1;
-                ctx.translate(spineX, y);
-                ctx.scale(-scaleX, 1);
+                ctx.translate(foldX, y);
+                ctx.scale(scaleX, 1);
 
                 if (
                     backPageNum >= 1 &&
