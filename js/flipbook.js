@@ -580,15 +580,26 @@ class FlipbookEngine {
         const bx = this.bookX;
         const by = this.bookY;
 
-        // Draw background book base
-        if (this.isTwoPage) {
-            this.drawBookShadow(ctx, bx, by, pw * 2, ph);
-            this.drawPaperStackEdges(ctx, bx, by, pw * 2, ph, isDark);
-        } else {
-            this.drawBookShadow(ctx, bx, by, pw, ph);
+        // Dedicated realistic single-page flip animation
+        if (!this.isTwoPage) {
+            this.renderSinglePageFlip(
+                ctx,
+                bx,
+                by,
+                pw,
+                ph,
+                progress,
+                dir,
+                isDark,
+            );
+            return;
         }
 
-        const spineX = this.isTwoPage ? bx + pw : bx;
+        // Two-Page Spread View Mode
+        this.drawBookShadow(ctx, bx, by, pw * 2, ph);
+        this.drawPaperStackEdges(ctx, bx, by, pw * 2, ph, isDark);
+
+        const spineX = bx + pw;
 
         if (dir > 0) {
             // Flipping forward: Right page curls towards left
@@ -672,6 +683,258 @@ class FlipbookEngine {
                 this.drawGutterShadow(ctx, spineX, by, ph);
             }
         }
+    }
+    
+    renderSinglePageFlip(ctx, bx, by, pw, ph, progress, dir, isDark) {
+        // Draw drop shadow under book page
+        this.drawBookShadow(ctx, bx, by, pw, ph);
+
+        const currPage = this.currentPage;
+
+        // Cover page decor if on page 1 or turning back to page 1
+        if (currPage === 1 || (dir < 0 && currPage === 2)) {
+            ctx.fillStyle = isDark ? "#0b0c10" : "#c8bba8";
+            ctx.fillRect(bx - 8, by - 2, 8, ph + 4);
+
+            ctx.fillStyle = isDark ? "#1a1b22" : "#e6decb";
+            ctx.fillRect(bx + pw, by + 4, 6, ph - 8);
+            ctx.fillRect(bx + 4, by + ph, pw - 8, 6);
+        }
+
+        if (dir > 0) {
+            // =============================================================
+            // Forward Page Turn (currPage -> nextPage)
+            // =============================================================
+            const nextPage = Math.min(this.docProvider.pageCount, currPage + 1);
+
+            // 1. Draw newly revealed page underneath at [bx, by, pw, ph]
+            if (nextPage <= this.docProvider.pageCount && nextPage !== currPage) {
+                this.drawPageContent(ctx, nextPage, bx, by, pw, ph);
+            } else {
+                this.drawBlankPage(ctx, bx, by, pw, ph, isDark);
+            }
+
+            // 2. Dynamic fold line sweeps from right edge (bx + pw) to left edge (bx)
+            const foldX = bx + pw * (1 - progress);
+
+            // 3. Draw unpeeled flat portion of currPage (from bx to foldX)
+            if (foldX > bx + 1) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(bx, by, foldX - bx, ph);
+                ctx.clip();
+                this.drawPageContent(ctx, currPage, bx, by, pw, ph);
+
+                // Curvature highlight right before the fold on unpeeled page
+                if (foldX > bx + 10) {
+                    const highlightW = Math.min(32, (foldX - bx) * 0.35);
+                    const hlGrad = ctx.createLinearGradient(foldX - highlightW, by, foldX, by);
+                    hlGrad.addColorStop(0, "rgba(255, 255, 255, 0)");
+                    hlGrad.addColorStop(0.7, isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.28)");
+                    hlGrad.addColorStop(1, "rgba(0, 0, 0, 0.18)");
+                    ctx.fillStyle = hlGrad;
+                    ctx.fillRect(foldX - highlightW, by, highlightW, ph);
+                }
+                ctx.restore();
+            }
+
+            // 4. Soft cast shadow on revealed next page to the right of foldX
+            const maxShadowW = Math.min(70, Math.max(12, (bx + pw - foldX) * 0.45));
+            const shadowW = Math.max(2, maxShadowW * Math.sin(Math.PI * progress));
+            if (foldX < bx + pw) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(foldX, by, (bx + pw) - foldX, ph);
+                ctx.clip();
+
+                const shadowGrad = ctx.createLinearGradient(foldX, by, foldX + shadowW, by);
+                shadowGrad.addColorStop(0, "rgba(0, 0, 0, 0.42)");
+                shadowGrad.addColorStop(0.35, "rgba(0, 0, 0, 0.18)");
+                shadowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                ctx.fillStyle = shadowGrad;
+                ctx.fillRect(foldX, by, shadowW, ph);
+                ctx.restore();
+            }
+
+            // 5. 3D curled flap looping back towards the left over the fold
+            const maxFlapW = Math.min(75, Math.max(10, (bx + pw - foldX) * 0.4));
+            const flapW = Math.max(0, maxFlapW * Math.sin(Math.PI * progress));
+            const flapLeft = Math.max(bx, foldX - flapW);
+
+            if (flapW > 2 && foldX > bx) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(flapLeft, by, foldX - flapLeft, ph);
+                ctx.clip();
+
+                // Reverse paper surface of turning leaf
+                ctx.fillStyle = isDark ? "#23252d" : "#fbf8f1";
+                ctx.fillRect(flapLeft, by, foldX - flapLeft, ph);
+
+                // 3D cylindrical lighting on the curl
+                const curlGrad = ctx.createLinearGradient(flapLeft, by, foldX, by);
+                if (isDark) {
+                    curlGrad.addColorStop(0, "rgba(0, 0, 0, 0.35)");
+                    curlGrad.addColorStop(0.4, "rgba(255, 255, 255, 0.14)");
+                    curlGrad.addColorStop(0.85, "rgba(0, 0, 0, 0.08)");
+                    curlGrad.addColorStop(1, "rgba(0, 0, 0, 0.3)");
+                } else {
+                    curlGrad.addColorStop(0, "rgba(0, 0, 0, 0.25)");
+                    curlGrad.addColorStop(0.45, "rgba(255, 255, 255, 0.65)");
+                    curlGrad.addColorStop(0.85, "rgba(0, 0, 0, 0.06)");
+                    curlGrad.addColorStop(1, "rgba(0, 0, 0, 0.22)");
+                }
+                ctx.fillStyle = curlGrad;
+                ctx.fillRect(flapLeft, by, foldX - flapLeft, ph);
+
+                // Crisp paper edge line where flap lifts off
+                ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.22)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(flapLeft, by);
+                ctx.lineTo(flapLeft, by + ph);
+                ctx.stroke();
+
+                ctx.restore();
+
+                // Subtle shadow cast by flap edge onto unpeeled page
+                const flapShadowW = Math.min(22, flapW * 0.45);
+                if (flapLeft - flapShadowW >= bx && flapShadowW > 1) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(bx, by, flapLeft - bx, ph);
+                    ctx.clip();
+
+                    const underGrad = ctx.createLinearGradient(flapLeft - flapShadowW, by, flapLeft, by);
+                    underGrad.addColorStop(0, "rgba(0, 0, 0, 0)");
+                    underGrad.addColorStop(1, "rgba(0, 0, 0, 0.22)");
+                    ctx.fillStyle = underGrad;
+                    ctx.fillRect(flapLeft - flapShadowW, by, flapShadowW, ph);
+                    ctx.restore();
+                }
+            }
+
+            // 6. Fold crease line along foldX
+            if (foldX > bx && foldX < bx + pw) {
+                ctx.save();
+                ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.25)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(foldX, by);
+                ctx.lineTo(foldX, by + ph);
+                ctx.stroke();
+                ctx.restore();
+            }
+        } else {
+            // =============================================================
+            // Backward Page Turn (currPage -> prevPage)
+            // =============================================================
+            const prevPage = Math.max(1, currPage - 1);
+
+            // 1. Draw currPage lying flat underneath at [bx, by, pw, ph]
+            this.drawPageContent(ctx, currPage, bx, by, pw, ph);
+
+            // 2. Dynamic fold line sweeps from left edge (bx) to right edge (bx + pw)
+            const foldX = bx + pw * progress;
+
+            // 3. Draw laid-down portion of prevPage (from bx to foldX)
+            if (foldX > bx + 1) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(bx, by, foldX - bx, ph);
+                ctx.clip();
+                this.drawPageContent(ctx, prevPage, bx, by, pw, ph);
+
+                // Curvature highlight right before the fold on laid-down page
+                if (foldX > bx + 10) {
+                    const highlightW = Math.min(32, (foldX - bx) * 0.35);
+                    const hlGrad = ctx.createLinearGradient(foldX - highlightW, by, foldX, by);
+                    hlGrad.addColorStop(0, "rgba(255, 255, 255, 0)");
+                    hlGrad.addColorStop(0.7, isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(255, 255, 255, 0.28)");
+                    hlGrad.addColorStop(1, "rgba(0, 0, 0, 0.18)");
+                    ctx.fillStyle = hlGrad;
+                    ctx.fillRect(foldX - highlightW, by, highlightW, ph);
+                }
+                ctx.restore();
+            }
+
+            // 4. Soft cast shadow on currPage waiting on the right
+            const maxShadowW = Math.min(70, Math.max(12, (bx + pw - foldX) * 0.45));
+            const shadowW = Math.max(2, maxShadowW * Math.sin(Math.PI * progress));
+            if (foldX < bx + pw) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(foldX, by, (bx + pw) - foldX, ph);
+                ctx.clip();
+
+                const shadowGrad = ctx.createLinearGradient(foldX, by, foldX + shadowW, by);
+                shadowGrad.addColorStop(0, "rgba(0, 0, 0, 0.42)");
+                shadowGrad.addColorStop(0.35, "rgba(0, 0, 0, 0.18)");
+                shadowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+                ctx.fillStyle = shadowGrad;
+                ctx.fillRect(foldX, by, shadowW, ph);
+                ctx.restore();
+            }
+
+            // 5. 3D curled flap unrolling towards the right
+            const maxFlapW = Math.min(75, Math.max(10, (foldX - bx) * 0.4));
+            const flapW = Math.max(0, maxFlapW * Math.sin(Math.PI * progress));
+            const flapRight = Math.min(bx + pw, foldX + flapW);
+
+            if (flapW > 2 && foldX < bx + pw) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(foldX, by, flapRight - foldX, ph);
+                ctx.clip();
+
+                // Reverse paper surface of incoming leaf
+                ctx.fillStyle = isDark ? "#23252d" : "#fbf8f1";
+                ctx.fillRect(foldX, by, flapRight - foldX, ph);
+
+                // 3D cylindrical lighting
+                const curlGrad = ctx.createLinearGradient(foldX, by, flapRight, by);
+                if (isDark) {
+                    curlGrad.addColorStop(0, "rgba(0, 0, 0, 0.3)");
+                    curlGrad.addColorStop(0.15, "rgba(0, 0, 0, 0.08)");
+                    curlGrad.addColorStop(0.6, "rgba(255, 255, 255, 0.14)");
+                    curlGrad.addColorStop(1, "rgba(0, 0, 0, 0.35)");
+                } else {
+                    curlGrad.addColorStop(0, "rgba(0, 0, 0, 0.22)");
+                    curlGrad.addColorStop(0.15, "rgba(0, 0, 0, 0.06)");
+                    curlGrad.addColorStop(0.55, "rgba(255, 255, 255, 0.65)");
+                    curlGrad.addColorStop(1, "rgba(0, 0, 0, 0.25)");
+                }
+                ctx.fillStyle = curlGrad;
+                ctx.fillRect(foldX, by, flapRight - foldX, ph);
+
+                // Crisp paper edge line at flap right
+                ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(0, 0, 0, 0.22)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(flapRight, by);
+                ctx.lineTo(flapRight, by + ph);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            // 6. Fold crease line along foldX
+            if (foldX > bx && foldX < bx + pw) {
+                ctx.save();
+                ctx.strokeStyle = isDark ? "rgba(255, 255, 255, 0.2)" : "rgba(0, 0, 0, 0.25)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(foldX, by);
+                ctx.lineTo(foldX, by + ph);
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // Thin outer framing border
+        ctx.strokeStyle = isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.1)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx, by, pw, ph);
     }
 
     drawCurlingLeaf(
