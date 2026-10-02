@@ -242,10 +242,13 @@ class FlipbookEngine {
         const centerX = w / 2;
         const middleY = h / 2;
 
+        // Distance to place buttons completely outside the book edge
+        const buttonOffset = 32;
+
         const transformedLeft =
-            centerX + this.panX + (leftEdge - centerX) * this.zoom;
+            centerX + this.panX + (leftEdge - centerX) * this.zoom - buttonOffset;
         const transformedRight =
-            centerX + this.panX + (rightEdge - centerX) * this.zoom;
+            centerX + this.panX + (rightEdge - centerX) * this.zoom + buttonOffset;
         const transformedCenterY =
             middleY + this.panY + (centerY - middleY) * this.zoom;
 
