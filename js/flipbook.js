@@ -651,7 +651,7 @@ class FlipbookEngine {
                 ctx.translate(spineX, y);
                 ctx.scale(scaleX, 1);
                 this.drawPageContent(ctx, frontPageNum, 0, 0, pw, ph);
-                
+
                 ctx.restore();
             } else {
                 // Back of page curling over to the left side
@@ -705,15 +705,8 @@ class FlipbookEngine {
 
                 const scaleX = 1 - 2 * progress;
                 ctx.translate(spineX, y);
-                ctx.scale(-scaleX, 1);
+                ctx.scale(scaleX, 1); // <--- Change -scaleX to positive scaleX!
                 this.drawPageContent(ctx, frontPageNum, -pw, 0, pw, ph);
-
-                const curlGrad = ctx.createLinearGradient(-pw, 0, 0, 0);
-                curlGrad.addColorStop(0, "rgba(0, 0, 0, 0.35)");
-                curlGrad.addColorStop(0.3, "rgba(255, 255, 255, 0.15)");
-                curlGrad.addColorStop(1, "rgba(0, 0, 0, 0.15)");
-                ctx.fillStyle = curlGrad;
-                ctx.fillRect(-pw, 0, pw, ph);
 
                 ctx.restore();
             } else {
@@ -735,12 +728,6 @@ class FlipbookEngine {
                 } else {
                     this.drawBlankPage(ctx, 0, 0, pw, ph, isDark);
                 }
-
-                const backGrad = ctx.createLinearGradient(0, 0, pw, 0);
-                backGrad.addColorStop(0, "rgba(0,0,0,0.25)");
-                backGrad.addColorStop(0.8, "rgba(0,0,0,0.05)");
-                ctx.fillStyle = backGrad;
-                ctx.fillRect(0, 0, pw, ph);
 
                 ctx.restore();
             }
