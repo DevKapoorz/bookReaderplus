@@ -11,7 +11,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     const annotationCanvas = document.getElementById("annotationCanvas");
     const bookTitleDisplay = document.getElementById("bookTitleDisplay");
     const pageIndicatorBadge = document.getElementById("pageIndicatorBadge");
+    const pagePrefix = document.getElementById("pagePrefix");
+    const pageNumberInput = document.getElementById("pageNumberInput");
+    const pageSuffix = document.getElementById("pageSuffix");
     const pageSlider = document.getElementById("pageSlider");
+    const sliderPageBubble = document.getElementById("sliderPageBubble");
     const zoomIndicatorPill = document.getElementById("zoomIndicatorPill");
 
     const btnOpenPdf = document.getElementById("btnOpenPdf");
@@ -96,9 +100,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     function updatePageControls(info) {
-        pageIndicatorBadge.textContent = info.label;
-        pageSlider.max = info.total;
-        pageSlider.value = info.current;
+        if (pageSlider) {
+            pageSlider.max = info.total;
+            pageSlider.value = info.current;
+        }
+
+        // Only update input if user is not actively typing in it
+        if (pageNumberInput && document.activeElement !== pageNumberInput) {
+            if (info.current === 1) {
+                if (pagePrefix) pagePrefix.textContent = "Cover (";
+                pageNumberInput.value = "1";
+                if (pageSuffix) pageSuffix.textContent = `of ${info.total})`;
+            } else if (info.isTwoPage) {
+                const spread = flipbook.getSpreadPages();
+                if (pagePrefix) pagePrefix.textContent = "Pages";
+                pageNumberInput.value = spread.right
+                    ? `${spread.left}–${spread.right}`
+                    : `${spread.left}`;
+                if (pageSuffix) pageSuffix.textContent = `of ${info.total}`;
+            } else {
+                if (pagePrefix) pagePrefix.textContent = "Page";
+                pageNumberInput.value = `${info.current}`;
+                if (pageSuffix) pageSuffix.textContent = `of ${info.total}`;
+            }
+            // Auto-size input field to fit content width
+            pageNumberInput.style.width = `${Math.max(28, (pageNumberInput.value.length + 1) * 8.5)}px`;
+        }
 
         // Dim extreme buttons if at boundaries
         btnTurnPrevExtreme.style.visibility = flipbook.canGoPrev()
@@ -109,6 +136,57 @@ document.addEventListener("DOMContentLoaded", async () => {
             : "hidden";
 
         flipbook.updateTurnButtonPositions();
+    }
+
+    // =========================================================================
+    // Typeable Page Number Input (Pages area just before scrollbar)
+    // =========================================================================
+    if (pageNumberInput) {
+        pageNumberInput.addEventListener("focus", () => {
+            pageNumberInput.select();
+        });
+
+        pageNumberInput.addEventListener("click", () => {
+            pageNumberInput.select();
+        });
+
+        const commitPageInput = () => {
+            const valStr = pageNumberInput.value.trim();
+            const match = valStr.match(/\d+/);
+            if (match) {
+                const targetPage = parseInt(match[0], 10);
+                if (targetPage >= 1 && targetPage <= docProvider.pageCount) {
+                    flipbook.goToPage(targetPage);
+                    return;
+                }
+            }
+            updatePageControls(flipbook.getPageStatusInfo());
+        };
+
+        pageNumberInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                commitPageInput();
+                pageNumberInput.blur();
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                updatePageControls(flipbook.getPageStatusInfo());
+                pageNumberInput.blur();
+            }
+        });
+
+        pageNumberInput.addEventListener("blur", () => {
+            commitPageInput();
+        });
+    }
+
+    if (pageIndicatorBadge && pageNumberInput) {
+        pageIndicatorBadge.addEventListener("click", (e) => {
+            if (e.target !== pageNumberInput) {
+                pageNumberInput.focus();
+                pageNumberInput.select();
+            }
+        });
     }
 
     // =========================================================================
@@ -124,11 +202,99 @@ document.addEventListener("DOMContentLoaded", async () => {
         flipbook.turnNext();
     });
 
-    // Page Scrubber Slider
+    // =========================================================================
+    // Page Scrubber Slider & Real-time Floating Bubble
+    // =========================================================================
+    let sliderDebounce = null;
+    let bubbleHideTimeout = null;
+
+    function getSliderPageLabel(val) {
+        const total = docProvider.pageCount;
+        if (val === 1) return `Cover (Page 1 of ${total})`;
+        if (flipbook.isTwoPage) {
+            const left = val % 2 === 0 ? val : val - 1;
+            const right = left + 1 <= total ? left + 1 : null;
+            return right
+                ? `Pages ${left}–${right} of ${total}`
+                : `Page ${left} of ${total}`;
+        }
+        return `Page ${val} of ${total}`;
+    }
+
+    function updateSliderBubble(val) {
+        if (!sliderPageBubble || !pageSlider) return;
+        const min = parseInt(pageSlider.min, 10) || 1;
+        const max = parseInt(pageSlider.max, 10) || 1;
+        const ratio = max > min ? (val - min) / (max - min) : 0;
+
+        sliderPageBubble.textContent = getSliderPageLabel(val);
+
+        // Position bubble right above the moving slider thumb
+        const sliderWidth = pageSlider.offsetWidth;
+        const thumbRadius = 7;
+        const thumbX = thumbRadius + ratio * (sliderWidth - thumbRadius * 2);
+        sliderPageBubble.style.left = `${thumbX}px`;
+    }
+
+    function showSliderBubble() {
+        if (!sliderPageBubble || !pageSlider) return;
+        clearTimeout(bubbleHideTimeout);
+        sliderPageBubble.classList.add("visible");
+        const val = parseInt(pageSlider.value, 10);
+        updateSliderBubble(val);
+    }
+
+    function hideSliderBubble(delay = 400) {
+        if (!sliderPageBubble) return;
+        clearTimeout(bubbleHideTimeout);
+        bubbleHideTimeout = setTimeout(() => {
+            sliderPageBubble.classList.remove("visible");
+        }, delay);
+    }
+
     pageSlider.addEventListener("input", (e) => {
-        const targetPage = parseInt(e.target.value, 10);
-        flipbook.goToPage(targetPage);
+        const val = parseInt(e.target.value, 10);
+        showSliderBubble();
+        updateSliderBubble(val);
+
+        // Live preview in page number badge as you drag
+        if (pageNumberInput && document.activeElement !== pageNumberInput) {
+            if (val === 1) {
+                if (pagePrefix) pagePrefix.textContent = "Cover (";
+                pageNumberInput.value = "1";
+                if (pageSuffix) pageSuffix.textContent = `of ${docProvider.pageCount})`;
+            } else if (flipbook.isTwoPage) {
+                const left = val % 2 === 0 ? val : val - 1;
+                const right = left + 1 <= docProvider.pageCount ? left + 1 : null;
+                if (pagePrefix) pagePrefix.textContent = "Pages";
+                pageNumberInput.value = right ? `${left}–${right}` : `${left}`;
+                if (pageSuffix) pageSuffix.textContent = `of ${docProvider.pageCount}`;
+            } else {
+                if (pagePrefix) pagePrefix.textContent = "Page";
+                pageNumberInput.value = `${val}`;
+                if (pageSuffix) pageSuffix.textContent = `of ${docProvider.pageCount}`;
+            }
+            pageNumberInput.style.width = `${Math.max(28, (pageNumberInput.value.length + 1) * 8.5)}px`;
+        }
+
+        // Debounce page navigation while dragging
+        clearTimeout(sliderDebounce);
+        sliderDebounce = setTimeout(() => {
+            flipbook.goToPage(val);
+        }, 45);
     });
+
+    pageSlider.addEventListener("change", (e) => {
+        const val = parseInt(e.target.value, 10);
+        flipbook.goToPage(val);
+        hideSliderBubble(300);
+    });
+
+    pageSlider.addEventListener("pointerdown", () => showSliderBubble());
+    pageSlider.addEventListener("touchstart", () => showSliderBubble(), { passive: true });
+    pageSlider.addEventListener("pointerup", () => hideSliderBubble(400));
+    pageSlider.addEventListener("touchend", () => hideSliderBubble(400));
+    pageSlider.addEventListener("mouseleave", () => hideSliderBubble(500));
 
     // =========================================================================
     // View Mode Toggle (1-Page vs 2-Page View)
