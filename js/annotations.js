@@ -40,10 +40,19 @@ class AnnotationManager {
         this.activeTool = tool;
         window.isAnnotationActive = !!tool;
 
+        // Reset any existing tool cursor classes
+        this.canvas.classList.remove(
+            "interactive",
+            "tool-draw",
+            "tool-highlighter",
+            "tool-text",
+            "tool-rectangle",
+            "tool-ellipse",
+            "tool-eraser",
+        );
+
         if (tool) {
-            this.canvas.classList.add("interactive");
-        } else {
-            this.canvas.classList.remove("interactive");
+            this.canvas.classList.add("interactive", `tool-${tool}`);
         }
         this.render();
     }

@@ -360,8 +360,43 @@ body.light-mode [data-tooltip]::after {
 
 #annotationCanvas.interactive {
     pointer-events: auto;
-    cursor: crosshair;
     touch-action: none;
+    cursor: crosshair;
+}
+
+/* Feature-Specific Cursors */
+/* 1. Pen / Annotate */
+#annotationCanvas.tool-draw {
+    cursor:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3Cfilter id='s' x='-20%25' y='-20%25' width='150%25' height='150%25'%3E%3CfeDropShadow dx='1' dy='1' stdDeviation='1' flood-color='%23000' flood-opacity='0.45'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23s)'%3E%3Cpath d='M3 21l3.5-1 12-12-2.5-2.5-12 12-1 3.5z' fill='%23222' stroke='%23fff' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M14 8l2.5 2.5' stroke='%23fff' stroke-width='1.2'/%3E%3Cpolygon points='3,21 4,17.5 6.5,20' fill='%23c49b63'/%3E%3Ccircle cx='3' cy='21' r='0.9' fill='%23fff'/%3E%3C/g%3E%3C/svg%3E") 2 22,
+        crosshair;
+}
+
+/* 2. Highlighter Marker */
+#annotationCanvas.tool-highlighter {
+    cursor:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3Cfilter id='hls' x='-20%25' y='-20%25' width='150%25' height='150%25'%3E%3CfeDropShadow dx='1' dy='1' stdDeviation='1' flood-color='%23000' flood-opacity='0.4'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23hls)'%3E%3Cpath d='M5 19l4-1 9-9-3-3-9 9-1 4z' fill='%23f4a261' stroke='%23222' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M15 6l3 3' stroke='%23222' stroke-width='1.2'/%3E%3Cpolygon points='5,19 2,22 6,22' fill='%23e76f51' stroke='%23222' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E") 2 22,
+        crosshair;
+}
+
+/* 3. Text Note */
+#annotationCanvas.tool-text {
+    cursor: text;
+}
+
+/* 4. Rectangle & Ellipse Shapes */
+#annotationCanvas.tool-rectangle,
+#annotationCanvas.tool-ellipse {
+    cursor:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cline x1='12' y1='2' x2='12' y2='8' stroke='%23000' stroke-width='2.5'/%3E%3Cline x1='12' y1='16' x2='12' y2='22' stroke='%23000' stroke-width='2.5'/%3E%3Cline x1='2' y1='12' x2='8' y2='12' stroke='%23000' stroke-width='2.5'/%3E%3Cline x1='16' y1='12' x2='22' y2='12' stroke='%23000' stroke-width='2.5'/%3E%3Cline x1='12' y1='3' x2='12' y2='7' stroke='%23fff' stroke-width='1.2'/%3E%3Cline x1='12' y1='17' x2='12' y2='21' stroke='%23fff' stroke-width='1.2'/%3E%3Cline x1='3' y1='12' x2='7' y2='12' stroke='%23fff' stroke-width='1.2'/%3E%3Cline x1='17' y1='12' x2='21' y2='12' stroke='%23fff' stroke-width='1.2'/%3E%3Ccircle cx='12' cy='12' r='1.5' fill='%23c49b63' stroke='%23fff' stroke-width='0.8'/%3E%3C/svg%3E") 12 12,
+        crosshair;
+}
+
+/* 5. Eraser */
+#annotationCanvas.tool-eraser {
+    cursor:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cdefs%3E%3Cfilter id='es' x='-20%25' y='-20%25' width='150%25' height='150%25'%3E%3CfeDropShadow dx='1' dy='1' stdDeviation='1' flood-color='%23000' flood-opacity='0.4'/%3E%3C/filter%3E%3C/defs%3E%3Cg filter='url(%23es)'%3E%3Cpath d='M15 4l5 5-8 8-5-5 8-8z' fill='%23f0f1f5' stroke='%23222' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cpath d='M7 12l5 5-4 4-5-1 4-8z' fill='%23ff5a79' stroke='%23222' stroke-width='1.5' stroke-linejoin='round'/%3E%3Cline x1='11' y1='8' x2='16' y2='13' stroke='%23888' stroke-width='1'/%3E%3C/g%3E%3C/svg%3E") 3 20,
+        cell;
 }
 
 /* ==========================================================================
