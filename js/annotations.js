@@ -129,42 +129,61 @@ class AnnotationManager {
     // Coordinate Normalization & Hit Testing
     // =========================================================================
 
-    getHitPage(screenX, screenY) {
+    getHitPage(clientX, clientY) {
         // Map screen coordinate into book layout coordinate
         const engine = this.engine;
         const w = engine.stageWidth;
         const h = engine.stageHeight;
 
-        // Invert zoom & pan
+        // Get exact canvas-relative position accounting for viewport scroll and canvas rect
+        const rect = this.canvas.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return null;
+
+        // Map client viewport (px) to canvas stage coordinates [0, w] and [0, h]
+        const canvasX = (clientX - rect.left) * (w / rect.width);
+        const canvasY = (clientY - rect.top) * (h / rect.height);
+
+        // Invert zoom & pan transformations
         const centerX = w / 2;
         const centerY = h / 2;
-        const localX =
-            (screenX - centerX - engine.panX) / engine.zoom + centerX;
-        const localY =
-            (screenY - centerY - engine.panY) / engine.zoom + centerY;
+        const localX = (canvasX - centerX - engine.panX) / engine.zoom + centerX;
+        const localY = (canvasY - centerY - engine.panY) / engine.zoom + centerY;
 
         const bx = engine.bookX;
         const by = engine.bookY;
         const pw = engine.pageWidth;
         const ph = engine.pageHeight;
 
-        // Check bounds
+        // Check vertical bounds
         if (localY < by || localY > by + ph) return null;
 
-        if (!engine.isTwoPage || engine.currentPage === 1) {
-            // Single / cover page
+        // Case 1: One-Page View Mode (Single centered page at [bx, by, pw, ph])
+        if (!engine.isTwoPage) {
             if (localX >= bx && localX <= bx + pw) {
                 return {
                     pageNum: engine.currentPage,
                     pageRect: { x: bx, y: by, w: pw, h: ph },
-                    normX: (localX - bx) / pw,
-                    normY: (localY - by) / ph,
+                    normX: Math.max(0, Math.min(1, (localX - bx) / pw)),
+                    normY: Math.max(0, Math.min(1, (localY - by) / ph)),
                 };
             }
             return null;
         }
 
-        // Two-page spread
+        // Case 2: Two-Page View Mode on Page 1 (Cover rendered on the right side: [bx + pw, by, pw, ph])
+        if (engine.currentPage === 1) {
+            if (localX >= bx + pw && localX <= bx + pw * 2) {
+                return {
+                    pageNum: 1,
+                    pageRect: { x: bx + pw, y: by, w: pw, h: ph },
+                    normX: Math.max(0, Math.min(1, (localX - (bx + pw)) / pw)),
+                    normY: Math.max(0, Math.min(1, (localY - by) / ph)),
+                };
+            }
+            return null;
+        }
+
+        // Case 3: Two-Page Spread (Pages 2+)
         const spread = engine.getSpreadPages();
         if (localX >= bx && localX < bx + pw) {
             // Left Page
@@ -172,8 +191,8 @@ class AnnotationManager {
                 return {
                     pageNum: spread.left,
                     pageRect: { x: bx, y: by, w: pw, h: ph },
-                    normX: (localX - bx) / pw,
-                    normY: (localY - by) / ph,
+                    normX: Math.max(0, Math.min(1, (localX - bx) / pw)),
+                    normY: Math.max(0, Math.min(1, (localY - by) / ph)),
                 };
             }
         } else if (localX >= bx + pw && localX <= bx + pw * 2) {
@@ -182,11 +201,12 @@ class AnnotationManager {
                 return {
                     pageNum: spread.right,
                     pageRect: { x: bx + pw, y: by, w: pw, h: ph },
-                    normX: (localX - (bx + pw)) / pw,
-                    normY: (localY - by) / ph,
+                    normX: Math.max(0, Math.min(1, (localX - (bx + pw)) / pw)),
+                    normY: Math.max(0, Math.min(1, (localY - by) / ph)),
                 };
             }
         }
+
         return null;
     }
 
@@ -216,10 +236,10 @@ class AnnotationManager {
         const h = engine.stageHeight;
 
         // Align canvas sizing
-        this.canvas.width = w * engine.dpr;
-        this.canvas.height = h * engine.dpr;
-        this.canvas.style.width = `${w}pt`;
-        this.canvas.style.height = `${h}pt`;
+        this.canvas.width = Math.round(w * engine.dpr);
+        this.canvas.height = Math.round(h * engine.dpr);
+        this.canvas.style.width = `${w}px`;
+        this.canvas.style.height = `${h}px`;
 
         ctx.save();
         ctx.scale(engine.dpr, engine.dpr);
@@ -240,10 +260,14 @@ class AnnotationManager {
         const pw = engine.pageWidth;
         const ph = engine.pageHeight;
 
-        if (!engine.isTwoPage || engine.currentPage === 1) {
-            // Single / cover page
+        if (!engine.isTwoPage) {
+            // One-Page View: Single centered page at [bx, by, pw, ph]
             this.renderPageAnnotations(ctx, engine.currentPage, bx, by, pw, ph);
+        } else if (engine.currentPage === 1) {
+            // Two-Page Mode - Page 1 (Cover rendered on Right side: [bx + pw, by, pw, ph])
+            this.renderPageAnnotations(ctx, 1, bx + pw, by, pw, ph);
         } else {
+            // Two-Page Spread (Pages 2+)
             const spread = engine.getSpreadPages();
             if (spread.left) {
                 this.renderPageAnnotations(ctx, spread.left, bx, by, pw, ph);
@@ -467,6 +491,9 @@ class AnnotationManager {
 
         this.isDrawing = true;
         this.dragStartPoint = { x: hit.normX, y: hit.normY };
+        try {
+            this.canvas.setPointerCapture?.(e.pointerId);
+        } catch (_) {}
 
         this.currentStroke = {
             id:
@@ -489,10 +516,23 @@ class AnnotationManager {
     onPointerMove(e) {
         if (!this.isDrawing || !this.currentStroke) return;
 
-        const hit = this.getHitPage(e.clientX, e.clientY);
-        if (!hit || hit.pageNum !== this.currentStroke.pageNum) return;
+        const engine = this.engine;
+        const w = engine.stageWidth;
+        const h = engine.stageHeight;
+        const rect = this.canvas.getBoundingClientRect();
+        if (rect.width <= 0 || rect.height <= 0) return;
 
-        const pt = { x: hit.normX, y: hit.normY };
+        const canvasX = (e.clientX - rect.left) * (w / rect.width);
+        const canvasY = (e.clientY - rect.top) * (h / rect.height);
+        const centerX = w / 2;
+        const centerY = h / 2;
+        const localX = (canvasX - centerX - engine.panX) / engine.zoom + centerX;
+        const localY = (canvasY - centerY - engine.panY) / engine.zoom + centerY;
+
+        const pr = this.currentStroke.pageRect;
+        const normX = Math.max(0, Math.min(1, (localX - pr.x) / pr.w));
+        const normY = Math.max(0, Math.min(1, (localY - pr.y) / pr.h));
+        const pt = { x: normX, y: normY };
 
         if (
             this.currentStroke.type === "draw" ||
@@ -516,6 +556,11 @@ class AnnotationManager {
     }
 
     onPointerUp(e) {
+        if (e && e.pointerId !== undefined) {
+            try {
+                this.canvas.releasePointerCapture?.(e.pointerId);
+            } catch (_) {}
+        }
         if (!this.isDrawing || !this.currentStroke) return;
         this.isDrawing = false;
 
@@ -708,3 +753,4 @@ class AnnotationManager {
 }
 
 window.AnnotationManager = AnnotationManager;
+
