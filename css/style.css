@@ -241,6 +241,9 @@ body.light-mode .btn-icon:hover {
     border-color: var(--text-accent);
     box-shadow: 0 0 12px var(--accent-glow);
 }
+body.light-mode .btn-icon.active:hover{
+    background: var(--text-accent);
+}
 
 .btn-icon svg {
     width: 18px;
@@ -281,7 +284,8 @@ body.light-mode .btn-icon:hover {
 }
 
 body.light-mode [data-tooltip]::after {
-    background: rgba(35, 31, 28, 0.95);
+    background: #fff;
+    color: #000;
 }
 
 [data-tooltip]:hover::after {
