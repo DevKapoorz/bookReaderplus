@@ -1,233 +1,568 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Flipbook Reader — Real Book Experience</title>
-  <meta name="description" content="A tactile, exceptionally beautiful canvas flipbook reader with dark mode, annotations, pinch zoom, and real book physics.">
-  
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap" rel="stylesheet">
-
-  <!-- PDF.js CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
-  <!-- Master Stylesheet -->
-  <link rel="stylesheet" href="css/style.css">
-</head>
-<body class="dark-mode" data-view-mode="two-page">
-  <!-- Subtle Ambient Vignette Lighting -->
-  <div class="ambient-lighting"></div>
-
-  <div class="app-container">
-    <!-- Top Minimalist Floating Navbar -->
-    <header class="top-navbar" id="topNavbar">
-      <div class="brand-section">
-        <span class="brand-icon">📖</span>
-        <span class="book-title-display" id="bookTitleDisplay">The Art of Reading</span>
-      </div>
-
-      <div class="nav-controls-group">
-        <!-- Open PDF file button -->
-        <input type="file" id="pdfFileInput" accept="application/pdf" style="display: none;">
-        <button class="btn-icon" id="btnOpenPdf" data-tooltip="Open PDF Book" aria-label="Open PDF">
-          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
-        </button>
-
-        <!-- Toggle One Page / Two Page View (Default: Two Page) -->
-        <button class="btn-icon active" id="btnToggleSpread" data-tooltip="Toggle 1-Page / 2-Page View" aria-label="View Mode">
-          <!-- 2-page icon -->
-          <svg id="iconTwoPage" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><line x1="12" y1="2" x2="12" y2="22"></line></svg>
-          <!-- 1-page icon -->
-          <svg id="iconOnePage" style="display:none;" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="9" y1="7" x2="15" y2="7"></line><line x1="9" y1="12" x2="15" y2="12"></line></svg>
-        </button>
-
-        <!-- Toggle Dark Mode (Default: Dark Mode) -->
-        <button class="btn-icon active" id="btnToggleDarkMode" data-tooltip="Toggle Dark / Light Mode" aria-label="Dark Mode">
-          <!-- Moon icon -->
-          <svg id="iconMoon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-          <!-- Sun icon -->
-          <svg id="iconSun" style="display:none;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-        </button>
-
-        <!-- Zoom Controls & Reset Pill -->
-        <button class="btn-icon" id="btnZoomOut" data-tooltip="Zoom Out (-)" aria-label="Zoom Out">
-          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-        </button>
-        <span class="zoom-indicator-pill" id="zoomIndicatorPill" data-tooltip="Reset Zoom">100%</span>
-        <button class="btn-icon" id="btnZoomIn" data-tooltip="Zoom In (+)" aria-label="Zoom In">
-          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-        </button>
-
-        <!-- Fullscreen Button -->
-        <button class="btn-icon" id="btnFullscreen" data-tooltip="Toggle Fullscreen" aria-label="Fullscreen">
-          <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
-        </button>
-      </div>
-    </header>
-
-    <!-- Center Book Viewport -->
-    <main class="book-viewport" id="bookViewport">
-      <!-- Canvases Stage -->
-      <div class="book-canvas-stage" id="bookCanvasStage">
-        <!-- Main canvas for book rendering, spine shadow, and page peeling animation -->
-        <canvas id="bookCanvas"></canvas>
-        <!-- Overlay canvas for vector annotations & drawing tools -->
-        <canvas id="annotationCanvas"></canvas>
-
-        <!-- Previous Page Circular Button -->
-        <button class="extreme-turn-btn left" id="btnTurnPrevExtreme" data-tooltip="Previous Page" aria-label="Previous Page">
-          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
-        </button>
-
-        <!-- Next Page Circular Button -->
-        <button class="extreme-turn-btn right" id="btnTurnNextExtreme" data-tooltip="Next Page" aria-label="Next Page">
-          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        </button>
-      </div>
-    </main>
-
-    <!-- Bottom Reading Bar (Page indicator & scrubber) -->
-    <footer class="bottom-reading-bar" id="bottomReadingBar">
-      <div class="page-indicator-badge" id="pageIndicatorBadge" data-tooltip="Click to type page number">
-        <span class="page-prefix" id="pagePrefix">Cover (</span>
-        <input
-          type="text"
-          inputmode="numeric"
-          class="page-number-input"
-          id="pageNumberInput"
-          value="1"
-          title="Click to type page number and press Enter"
-          aria-label="Current page number, click to type"
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
         />
-        <span class="page-suffix" id="pageSuffix">of 12)</span>
-      </div>
+        <title>Flipbook Reader — Real Book Experience</title>
+        <meta
+            name="description"
+            content="A tactile, exceptionally beautiful canvas flipbook reader with dark mode, annotations, pinch zoom, and real book physics."
+        />
 
-      <div class="page-slider-container">
-        <input type="range" class="page-slider" id="pageSlider" min="1" max="12" value="1" step="1" aria-label="Page Scrubber">
-        <div class="slider-page-bubble" id="sliderPageBubble">Page 1</div>
-      </div>
-    </footer>
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&display=swap"
+            rel="stylesheet"
+        />
 
-    <!-- A Small Circle with Three Dots & Floating Options Palette
+        <!-- PDF.js CDN -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+        <!-- Master Stylesheet -->
+        <link rel="stylesheet" href="css/style.css" />
+    </head>
+    <body class="dark-mode" data-view-mode="two-page">
+        <!-- Subtle Ambient Vignette Lighting -->
+        <div class="ambient-lighting"></div>
+
+        <div class="app-container">
+            <!-- Top Minimalist Floating Navbar -->
+            <header class="top-navbar" id="topNavbar">
+                <div class="brand-section">
+                    <span class="brand-icon">📖</span>
+                    <span class="book-title-display" id="bookTitleDisplay"
+                        >The Art of Reading</span
+                    >
+                </div>
+
+                <div class="nav-controls-group">
+                    <!-- Open PDF file button -->
+                    <input
+                        type="file"
+                        id="pdfFileInput"
+                        accept="application/pdf"
+                        style="display: none"
+                    />
+                    <button
+                        class="btn-icon"
+                        id="btnOpenPdf"
+                        data-tooltip="Open PDF Book"
+                        aria-label="Open PDF"
+                    >
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                            ></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                    </button>
+
+                    <!-- Toggle One Page / Two Page View (Default: Two Page) -->
+                    <button
+                        class="btn-icon active"
+                        id="btnToggleSpread"
+                        data-tooltip="Toggle 1-Page / 2-Page View"
+                        aria-label="View Mode"
+                    >
+                        <!-- 2-page icon -->
+                        <svg id="iconTwoPage" viewBox="0 0 24 24">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path
+                                d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+                            ></path>
+                            <line x1="12" y1="2" x2="12" y2="22"></line>
+                        </svg>
+                        <!-- 1-page icon -->
+                        <svg
+                            id="iconOnePage"
+                            style="display: none"
+                            viewBox="0 0 24 24"
+                        >
+                            <rect
+                                x="5"
+                                y="2"
+                                width="14"
+                                height="20"
+                                rx="2"
+                                ry="2"
+                            ></rect>
+                            <line x1="9" y1="7" x2="15" y2="7"></line>
+                            <line x1="9" y1="12" x2="15" y2="12"></line>
+                        </svg>
+                    </button>
+
+                    <!-- Toggle Dark Mode (Default: Dark Mode) -->
+                    <button
+                        class="btn-icon active"
+                        id="btnToggleDarkMode"
+                        data-tooltip="Toggle Dark / Light Mode"
+                        aria-label="Dark Mode"
+                    >
+                        <!-- Moon icon -->
+                        <svg id="iconMoon" viewBox="0 0 24 24">
+                            <path
+                                d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+                            ></path>
+                        </svg>
+                        <!-- Sun icon -->
+                        <svg
+                            id="iconSun"
+                            style="display: none"
+                            viewBox="0 0 24 24"
+                        >
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line
+                                x1="4.22"
+                                y1="4.22"
+                                x2="5.64"
+                                y2="5.64"
+                            ></line>
+                            <line
+                                x1="18.36"
+                                y1="18.36"
+                                x2="19.78"
+                                y2="19.78"
+                            ></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line
+                                x1="4.22"
+                                y1="19.78"
+                                x2="5.64"
+                                y2="18.36"
+                            ></line>
+                            <line
+                                x1="18.36"
+                                y1="5.64"
+                                x2="19.78"
+                                y2="4.22"
+                            ></line>
+                        </svg>
+                    </button>
+
+                    <!-- Zoom Controls & Reset Pill -->
+                    <button
+                        class="btn-icon"
+                        id="btnZoomOut"
+                        data-tooltip="Zoom Out (-)"
+                        aria-label="Zoom Out"
+                    >
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            <line x1="8" y1="11" x2="14" y2="11"></line>
+                        </svg>
+                    </button>
+                    <span
+                        class="zoom-indicator-pill"
+                        id="zoomIndicatorPill"
+                        data-tooltip="Reset Zoom"
+                        >100%</span
+                    >
+                    <button
+                        class="btn-icon"
+                        id="btnZoomIn"
+                        data-tooltip="Zoom In (+)"
+                        aria-label="Zoom In"
+                    >
+                        <svg viewBox="0 0 24 24">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            <line x1="11" y1="8" x2="11" y2="14"></line>
+                            <line x1="8" y1="11" x2="14" y2="11"></line>
+                        </svg>
+                    </button>
+
+                    <!-- Fullscreen Button -->
+                    <button
+                        class="btn-icon"
+                        id="btnFullscreen"
+                        data-tooltip="Toggle Fullscreen"
+                        aria-label="Fullscreen"
+                    >
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"
+                            ></path>
+                        </svg>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Center Book Viewport -->
+            <main class="book-viewport" id="bookViewport">
+                <!-- Canvases Stage -->
+                <div class="book-canvas-stage" id="bookCanvasStage">
+                    <!-- Main canvas for book rendering, spine shadow, and page peeling animation -->
+                    <canvas id="bookCanvas"></canvas>
+                    <!-- Overlay canvas for vector annotations & drawing tools -->
+                    <canvas id="annotationCanvas"></canvas>
+
+                    <!-- Previous Page Circular Button -->
+                    <button
+                        class="extreme-turn-btn left"
+                        id="btnTurnPrevExtreme"
+                        data-tooltip="Previous Page"
+                        aria-label="Previous Page"
+                    >
+                        <svg viewBox="0 0 24 24">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+
+                    <!-- Next Page Circular Button -->
+                    <button
+                        class="extreme-turn-btn right"
+                        id="btnTurnNextExtreme"
+                        data-tooltip="Next Page"
+                        aria-label="Next Page"
+                    >
+                        <svg viewBox="0 0 24 24">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </main>
+
+            <!-- Bottom Reading Bar (Page indicator & scrubber) -->
+            <footer class="bottom-reading-bar" id="bottomReadingBar">
+                <div
+                    class="page-indicator-badge"
+                    id="pageIndicatorBadge"
+                    data-tooltip="Click to type page number"
+                >
+                    <span class="page-prefix" id="pagePrefix">Cover (</span>
+                    <input
+                        type="text"
+                        inputmode="numeric"
+                        class="page-number-input"
+                        id="pageNumberInput"
+                        value="1"
+                        title="Click to type page number and press Enter"
+                        aria-label="Current page number, click to type"
+                    />
+                    <span class="page-suffix" id="pageSuffix">of 12)</span>
+                </div>
+
+                <div class="page-slider-container">
+                    <input
+                        type="range"
+                        class="page-slider"
+                        id="pageSlider"
+                        min="1"
+                        max="12"
+                        value="1"
+                        step="1"
+                        aria-label="Page Scrubber"
+                    />
+                    <div class="slider-page-bubble" id="sliderPageBubble">
+                        Page 1
+                    </div>
+                </div>
+            </footer>
+
+            <!-- A Small Circle with Three Dots & Floating Options Palette
          "a small circle with three dots ... hovering which opens options and options are as annotate , text write , shapes like ellipse , rectangle , highlighter .." -->
-    <div class="fab-container" id="fabContainer">
-      <!-- Floating Options Palette (Reveals smoothly on hover of 3-dots circle) -->
-      <aside class="options-palette-panel" id="optionsPalettePanel">
-        <div class="panel-header">
-          <span class="panel-title">Tools & Annotations</span>
-          <span class="panel-status" id="saveStatusIndicator">✓ history.json</span>
+            <div class="fab-container" id="fabContainer">
+                <!-- Floating Options Palette (Reveals smoothly on hover of 3-dots circle) -->
+                <aside class="options-palette-panel" id="optionsPalettePanel">
+                    <div class="panel-header">
+                        <span class="panel-title">Tools & Annotations</span>
+                        <span class="panel-status" id="saveStatusIndicator"
+                            >✓ history.json</span
+                        >
+                    </div>
+
+                    <!-- Annotation Tools Grid -->
+                    <div class="tools-grid">
+                        <!-- Annotate (Pen) -->
+                        <button
+                            class="tool-btn"
+                            data-tool="draw"
+                            data-tooltip="Pen Annotate"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                                <path
+                                    d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"
+                                ></path>
+                                <path d="M2 2l7.586 7.586"></path>
+                                <circle cx="11" cy="11" r="2"></circle>
+                            </svg>
+                            <span>Annotate</span>
+                        </button>
+
+                        <!-- Highlighter -->
+                        <button
+                            class="tool-btn"
+                            data-tool="highlighter"
+                            data-tooltip="Highlighter"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <path d="m9 11-6 6v3h3l6-6"></path>
+                                <path
+                                    d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"
+                                ></path>
+                            </svg>
+                            <span>Highlight</span>
+                        </button>
+
+                        <!-- Text Write -->
+                        <button
+                            class="tool-btn"
+                            data-tool="text"
+                            data-tooltip="Text Note"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                                <line x1="9" y1="20" x2="15" y2="20"></line>
+                                <line x1="12" y1="4" x2="12" y2="20"></line>
+                            </svg>
+                            <span>Text</span>
+                        </button>
+
+                        <!-- Rectangle -->
+                        <button
+                            class="tool-btn"
+                            data-tool="rectangle"
+                            data-tooltip="Rectangle"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <rect
+                                    x="3"
+                                    y="3"
+                                    width="18"
+                                    height="18"
+                                    rx="2"
+                                    ry="2"
+                                ></rect>
+                            </svg>
+                            <span>Rectangle</span>
+                        </button>
+
+                        <!-- Ellipse -->
+                        <button
+                            class="tool-btn"
+                            data-tool="ellipse"
+                            data-tooltip="Ellipse"
+                        >
+                            <svg viewBox="0 0 24 24">
+                                <ellipse
+                                    cx="12"
+                                    cy="12"
+                                    rx="9"
+                                    ry="6"
+                                ></ellipse>
+                            </svg>
+                            <span>Ellipse</span>
+                        </button>
+                    </div>
+
+                    <!-- Color Palette & Stroke Size -->
+                    <div class="palette-row">
+                        <div class="colors-list" id="colorsList">
+                            <div
+                                class="color-swatch active"
+                                data-color="#e63946"
+                                style="background: #e63946"
+                                data-tooltip="Crimson"
+                            ></div>
+                            <div
+                                class="color-swatch"
+                                data-color="#3a86ff"
+                                style="background: #3a86ff"
+                                data-tooltip="Cobalt Blue"
+                            ></div>
+                            <div
+                                class="color-swatch"
+                                data-color="#2a9d8f"
+                                style="background: #2a9d8f"
+                                data-tooltip="Emerald"
+                            ></div>
+                            <div
+                                class="color-swatch"
+                                data-color="#f4a261"
+                                style="background: #f4a261"
+                                data-tooltip="Amber Gold"
+                            ></div>
+                            <div
+                                class="color-swatch"
+                                data-color="#9d4edd"
+                                style="background: #9d4edd"
+                                data-tooltip="Amethyst"
+                            ></div>
+                            <div
+                                class="color-swatch"
+                                data-color="#ffffff"
+                                style="background: #ffffff"
+                                data-tooltip="White"
+                            ></div>
+                        </div>
+
+                        <div class="stroke-size-selector">
+                            <div
+                                class="stroke-chip fine"
+                                data-width="2"
+                                data-tooltip="Fine 2px"
+                            >
+                                <div class="dot"></div>
+                            </div>
+                            <div
+                                class="stroke-chip med active"
+                                data-width="4"
+                                data-tooltip="Medium 4px"
+                            >
+                                <div class="dot"></div>
+                            </div>
+                            <div
+                                class="stroke-chip bold"
+                                data-width="8"
+                                data-tooltip="Bold 8px"
+                            >
+                                <div class="dot"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Secondary Actions (Eraser, Undo, Redo, Clear, Save) -->
+                    <div class="action-buttons-row">
+                        <button
+                            class="action-pill-btn"
+                            id="btnEraserTool"
+                            data-tooltip="Eraser"
+                        >
+                            <svg
+                                style="width: 14px; height: 14px"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                fill="none"
+                            >
+                                <path
+                                    d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"
+                                ></path>
+                                <path d="M22 21H7"></path>
+                                <path d="m5 11 9 9"></path>
+                            </svg>
+                            <span>Eraser</span>
+                        </button>
+                        <button
+                            class="action-pill-btn"
+                            id="btnUndoAnnot"
+                            data-tooltip="Undo (Ctrl+Z)"
+                        >
+                            <svg
+                                style="width: 14px; height: 14px"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                fill="none"
+                            >
+                                <path d="M3 7v6h6"></path>
+                                <path
+                                    d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"
+                                ></path>
+                            </svg>
+                            <span>Undo</span>
+                        </button>
+                        <button
+                            class="action-pill-btn"
+                            id="btnClearPageAnnot"
+                            data-tooltip="Clear Page"
+                        >
+                            <svg
+                                style="width: 14px; height: 14px"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                fill="none"
+                            >
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path
+                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                                ></path>
+                            </svg>
+                            <span>Clear</span>
+                        </button>
+                        <button
+                            class="action-pill-btn save-history-btn"
+                            id="btnSaveHistoryManual"
+                            data-tooltip="Save to history.json"
+                        >
+                            <svg
+                                style="width: 14px; height: 14px"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                fill="none"
+                            >
+                                <path
+                                    d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"
+                                ></path>
+                                <polyline
+                                    points="17 21 17 13 7 13 7 21"
+                                ></polyline>
+                                <polyline points="7 3 7 8 15 8"></polyline>
+                            </svg>
+                            <span>Save</span>
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- The Small Circle with Three Dots -->
+                <button
+                    class="fab-menu-btn"
+                    id="fabMenuBtn"
+                    aria-label="Tools and Options"
+                >
+                    <div class="three-dots-icon">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Drag & Drop PDF Overlay -->
+            <div class="file-dropzone-overlay" id="fileDropzoneOverlay">
+                <div class="dropzone-box">
+                    <svg
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        fill="none"
+                    >
+                        <path
+                            d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                        ></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <h3 style="font-size: 1.2rem; font-weight: 600">
+                        Drop PDF Book Here
+                    </h3>
+                    <p style="font-size: 0.85rem; color: var(--text-muted)">
+                        Release to open and render in realistic flipbook
+                    </p>
+                </div>
+            </div>
+
+            <!-- Toast Notification -->
+            <div class="toast-notification" id="toastNotification">
+                <span id="toastIcon">✓</span>
+                <span id="toastMessage">Notification</span>
+            </div>
         </div>
 
-        <!-- Annotation Tools Grid -->
-        <div class="tools-grid">
-          <!-- Annotate (Pen) -->
-          <button class="tool-btn" data-tool="draw" data-tooltip="Pen Annotate">
-            <svg viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"></path><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path><path d="M2 2l7.586 7.586"></path><circle cx="11" cy="11" r="2"></circle></svg>
-            <span>Annotate</span>
-          </button>
-
-          <!-- Highlighter -->
-          <button class="tool-btn" data-tool="highlighter" data-tooltip="Highlighter">
-            <svg viewBox="0 0 24 24"><path d="m9 11-6 6v3h3l6-6"></path><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"></path></svg>
-            <span>Highlight</span>
-          </button>
-
-          <!-- Text Write -->
-          <button class="tool-btn" data-tool="text" data-tooltip="Text Note">
-            <svg viewBox="0 0 24 24"><polyline points="4 7 4 4 20 4 20 7"></polyline><line x1="9" y1="20" x2="15" y2="20"></line><line x1="12" y1="4" x2="12" y2="20"></line></svg>
-            <span>Text</span>
-          </button>
-
-          <!-- Rectangle -->
-          <button class="tool-btn" data-tool="rectangle" data-tooltip="Rectangle">
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg>
-            <span>Rectangle</span>
-          </button>
-
-          <!-- Ellipse -->
-          <button class="tool-btn" data-tool="ellipse" data-tooltip="Ellipse">
-            <svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="6"></ellipse></svg>
-            <span>Ellipse</span>
-          </button>
-        </div>
-
-        <!-- Color Palette & Stroke Size -->
-        <div class="palette-row">
-          <div class="colors-list" id="colorsList">
-            <div class="color-swatch active" data-color="#e63946" style="background:#e63946;" data-tooltip="Crimson"></div>
-            <div class="color-swatch" data-color="#3a86ff" style="background:#3a86ff;" data-tooltip="Cobalt Blue"></div>
-            <div class="color-swatch" data-color="#2a9d8f" style="background:#2a9d8f;" data-tooltip="Emerald"></div>
-            <div class="color-swatch" data-color="#f4a261" style="background:#f4a261;" data-tooltip="Amber Gold"></div>
-            <div class="color-swatch" data-color="#9d4edd" style="background:#9d4edd;" data-tooltip="Amethyst"></div>
-            <div class="color-swatch" data-color="#ffffff" style="background:#ffffff;" data-tooltip="White"></div>
-          </div>
-
-          <div class="stroke-size-selector">
-            <div class="stroke-chip fine" data-width="2" data-tooltip="Fine 2px"><div class="dot"></div></div>
-            <div class="stroke-chip med active" data-width="4" data-tooltip="Medium 4px"><div class="dot"></div></div>
-            <div class="stroke-chip bold" data-width="8" data-tooltip="Bold 8px"><div class="dot"></div></div>
-          </div>
-        </div>
-
-        <!-- Secondary Actions (Eraser, Undo, Redo, Clear, Save) -->
-        <div class="action-buttons-row">
-          <button class="action-pill-btn" id="btnEraserTool" data-tooltip="Eraser">
-            <svg style="width:14px;height:14px;" viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path><path d="M22 21H7"></path><path d="m5 11 9 9"></path></svg>
-            <span>Eraser</span>
-          </button>
-          <button class="action-pill-btn" id="btnUndoAnnot" data-tooltip="Undo (Ctrl+Z)">
-            <svg style="width:14px;height:14px;" viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M3 7v6h6"></path><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path></svg>
-            <span>Undo</span>
-          </button>
-          <button class="action-pill-btn" id="btnClearPageAnnot" data-tooltip="Clear Page">
-            <svg style="width:14px;height:14px;" viewBox="0 0 24 24" stroke="currentColor" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-            <span>Clear</span>
-          </button>
-          <button class="action-pill-btn save-history-btn" id="btnSaveHistoryManual" data-tooltip="Save to history.json">
-            <svg style="width:14px;height:14px;" viewBox="0 0 24 24" stroke="currentColor" fill="none"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-            <span>Save</span>
-          </button>
-        </div>
-      </aside>
-
-      <!-- The Small Circle with Three Dots -->
-      <button class="fab-menu-btn" id="fabMenuBtn" aria-label="Tools and Options">
-        <div class="three-dots-icon">
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-      </button>
-    </div>
-
-    <!-- Drag & Drop PDF Overlay -->
-    <div class="file-dropzone-overlay" id="fileDropzoneOverlay">
-      <div class="dropzone-box">
-        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" fill="none">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="17 8 12 3 7 8"></polyline>
-          <line x1="12" y1="3" x2="12" y2="15"></line>
-        </svg>
-        <h3 style="font-size:1.2rem;font-weight:600;">Drop PDF Book Here</h3>
-        <p style="font-size:0.85rem;color:var(--text-muted);">Release to open and render in realistic flipbook</p>
-      </div>
-    </div>
-
-    <!-- Toast Notification -->
-    <div class="toast-notification" id="toastNotification">
-      <span id="toastIcon">✓</span>
-      <span id="toastMessage">Notification</span>
-    </div>
-  </div>
-
-  <!-- App Scripts -->
-  <script src="js/pdf-loader.js"></script>
-  <script src="js/flipbook.js"></script>
-  <script src="js/annotations.js"></script>
-  <script src="js/app.js"></script>
-</body>
+        <!-- App Scripts -->
+        <script src="js/pdf-loader.js"></script>
+        <script src="js/flipbook.js"></script>
+        <script src="js/annotations.js"></script>
+        <script src="js/app.js"></script>
+    </body>
 </html>
-

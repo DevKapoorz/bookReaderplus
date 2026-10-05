@@ -7,68 +7,68 @@ An exceptionally beautiful, tactile, and simple canvas-based flipbook web applic
 ## ✨ Features
 
 - **Realistic Book Aesthetics & Canvas Physics**:
-  - Genuine paper texture, 3D cylindrical curling with front & reverse page rendering.
-  - Multi-layer fore-edge paper stack depth showing physical book thickness.
-  - Center spine gutter shadow (ambient occlusion) and realistic drop shadows.
-  - Web Audio synthesized page rustle sound on every page flip.
+    - Genuine paper texture, 3D cylindrical curling with front & reverse page rendering.
+    - Multi-layer fore-edge paper stack depth showing physical book thickness.
+    - Center spine gutter shadow (ambient occlusion) and realistic drop shadows.
+    - Web Audio synthesized page rustle sound on every page flip.
 - **Cover Page Logic**:
-  - **Page 1 is single** (Front Cover) displayed centered like a closed volume.
-  - Flipping the cover opens into a **Two-Page Spread** (Pages 2 & 3).
-  - Subsequent pages display in natural 2-page reading spreads.
+    - **Page 1 is single** (Front Cover) displayed centered like a closed volume.
+    - Flipping the cover opens into a **Two-Page Spread** (Pages 2 & 3).
+    - Subsequent pages display in natural 2-page reading spreads.
 - **Controls & Navigation**:
-  - **Drag & Swipe**: Grab any page corner or edge to peel the page dynamically with the mouse/touch pointer. Releasing past the threshold flips the page; fast flick swipe also turns.
-  - **Highly Transparent Buttons on Left & Right Extremes**: Discrete translucent buttons on the outer borders that gently glow on hover to turn pages forward/backward.
-  - **Small Circle with Three Dots (`•••`)**: Floating circular button; hovering or clicking opens the options palette.
-  - **Pinch-to-Zoom**: Multi-touch two-finger pinch zoom, plus mouse wheel zoom (with `Ctrl`/`Alt` or trackpad pinch) and smooth pan.
+    - **Drag & Swipe**: Grab any page corner or edge to peel the page dynamically with the mouse/touch pointer. Releasing past the threshold flips the page; fast flick swipe also turns.
+    - **Highly Transparent Buttons on Left & Right Extremes**: Discrete translucent buttons on the outer borders that gently glow on hover to turn pages forward/backward.
+    - **Small Circle with Three Dots (`•••`)**: Floating circular button; hovering or clicking opens the options palette.
+    - **Pinch-to-Zoom**: Multi-touch two-finger pinch zoom, plus mouse wheel zoom (with `Ctrl`/`Alt` or trackpad pinch) and smooth pan.
 - **Options Palette (Hovering over 3-Dots Circle)**:
-  - 🖊️ **Annotate**: Freehand smooth pen drawing.
-  - 🖍️ **Highlighter**: Translucent highlighter marker.
-  - 🔤 **Text Write**: Click directly on any page to place typed sticky notes.
-  - ⭕ **Ellipse**: Precision vector ellipse tool.
-  - ▢ **Rectangle**: Precision vector rectangle tool.
-  - 🎨 **Palette**: Luxury colors (Crimson, Cobalt Blue, Emerald, Amber Gold, Amethyst, White).
-  - 📏 **Stroke Width**: Fine (2px), Medium (4px), Bold (8px).
-  - 🧽 **Eraser / Undo / Redo / Clear Page**.
+    - 🖊️ **Annotate**: Freehand smooth pen drawing.
+    - 🖍️ **Highlighter**: Translucent highlighter marker.
+    - 🔤 **Text Write**: Click directly on any page to place typed sticky notes.
+    - ⭕ **Ellipse**: Precision vector ellipse tool.
+    - ▢ **Rectangle**: Precision vector rectangle tool.
+    - 🎨 **Palette**: Luxury colors (Crimson, Cobalt Blue, Emerald, Amber Gold, Amethyst, White).
+    - 📏 **Stroke Width**: Fine (2px), Medium (4px), Bold (8px).
+    - 🧽 **Eraser / Undo / Redo / Clear Page**.
 - **Persistence (`history.json`)**:
-  - Annotations are **not** injected or saved into the PDF file itself.
-  - Annotations are saved externally into `history.json` via the Python backend API (`/api/history`), with automatic synchronization and a manual "Save" button with status indicator badge.
-  - Offline fallback to local storage if running without the server.
+    - Annotations are **not** injected or saved into the PDF file itself.
+    - Annotations are saved externally into `history.json` via the Python backend API (`/api/history`), with automatic synchronization and a manual "Save" button with status indicator badge.
+    - Offline fallback to local storage if running without the server.
 - **View & Theme Modes**:
-  - **Dark Mode by default** (custom radial ambient lighting and eye-friendly dark paper mode).
-  - **Two-Page View by default** with toggle for One-Page View.
-  - Smooth animated transitions between modes.
+    - **Dark Mode by default** (custom radial ambient lighting and eye-friendly dark paper mode).
+    - **Two-Page View by default** with toggle for One-Page View.
+    - Smooth animated transitions between modes.
 - **Document Support**:
-  - Comes with a built-in 12-page illustrated classic book (*The Art of Reading: A Bibliophile's Compendium*), complete with title plate, table of contents, diagrams, engravings, quotes, and colophon.
-  - **Open Any PDF**: Click the PDF button or drag and drop any PDF file anywhere onto the book to render and read in the flipbook!
+    - Comes with a built-in 12-page illustrated classic book (_The Art of Reading: A Bibliophile's Compendium_), complete with title plate, table of contents, diagrams, engravings, quotes, and colophon.
+    - **Open Any PDF**: Click the PDF button or drag and drop any PDF file anywhere onto the book to render and read in the flipbook!
 
 ---
 
 ## 🚀 How to Run
 
 1. Open a terminal in this project directory:
-   ```powershell
-   python server.py
-   ```
+    ```powershell
+    python server.py
+    ```
 2. Open your web browser to:
-   ```
-   http://localhost:8080
-   ```
+    ```
+    http://localhost:8080
+    ```
 3. Alternatively, you can double-click `index.html` to run in standalone client mode.
 
 ---
 
 ## ⌨️ Keyboard Shortcuts
 
-| Shortcut | Action |
-| :--- | :--- |
-| `→` / `Space` / `Page Down` | Next Page |
-| `←` / `Page Up` | Previous Page |
-| `D` | Toggle Dark Mode / Light Mode |
-| `V` | Toggle 1-Page / 2-Page View |
-| `Ctrl + Z` | Undo Annotation |
-| `Ctrl + Y` or `Ctrl + Shift + Z` | Redo Annotation |
-| `Ctrl + Wheel` / `Pinch` | Zoom In / Out |
-| `Esc` | Return to Reading Mode (Deselect active tool) |
+| Shortcut                         | Action                                        |
+| :------------------------------- | :-------------------------------------------- |
+| `→` / `Space` / `Page Down`      | Next Page                                     |
+| `←` / `Page Up`                  | Previous Page                                 |
+| `D`                              | Toggle Dark Mode / Light Mode                 |
+| `V`                              | Toggle 1-Page / 2-Page View                   |
+| `Ctrl + Z`                       | Undo Annotation                               |
+| `Ctrl + Y` or `Ctrl + Shift + Z` | Redo Annotation                               |
+| `Ctrl + Wheel` / `Pinch`         | Zoom In / Out                                 |
+| `Esc`                            | Return to Reading Mode (Deselect active tool) |
 
 ---
 
