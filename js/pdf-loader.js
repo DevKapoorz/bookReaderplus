@@ -803,7 +803,7 @@ class DocumentProvider {
             "Draw Rectangles or Ellipses around key diagrams.",
             "Add Text Notes to question or synthesize ideas.",
             "Pinch or scroll to inspect fine details with clarity.",
-            "All markings automatically persist in history.json.",
+            "Markings remain responsive throughout your reading session.",
         ];
 
         let startY = 360;

@@ -2,8 +2,7 @@
  * Real Book Annotation Layer
  * ===========================
  * Handles freehand annotation, text writing, shapes (ellipse, rectangle),
- * highlighter, color picking, undo/redo, and JSON history synchronization
- * with Python server (history.json).
+ * highlighter, color picking, and undo/redo.
  */
 
 class AnnotationManager {
@@ -28,9 +27,6 @@ class AnnotationManager {
         this.annotationsByDoc = new Map();
         this.undoStack = [];
         this.redoStack = [];
-
-        // History API auto-save debounce timer
-        this.saveTimeout = null;
         this.onStatusChange = () => {};
 
         this.bindEvents();
@@ -63,75 +59,6 @@ class AnnotationManager {
 
     setStrokeWidth(w) {
         this.currentStrokeWidth = w;
-    }
-
-    // =========================================================================
-    // API Synchronization with Python history.json
-    // =========================================================================
-
-    async loadFromHistory(docId) {
-        try {
-            const res = await fetch(
-                `/api/history?docId=${encodeURIComponent(docId)}`,
-            );
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const json = await res.json();
-
-            if (json.success && json.data && json.data.annotations) {
-                const pageMap = new Map();
-                for (const [pageNum, item] of Object.entries(
-                    json.data.annotations,
-                )) {
-                    const annots = item.items || item;
-                    if (Array.isArray(annots)) {
-                        pageMap.set(parseInt(pageNum, 10), annots);
-                    }
-                }
-                this.annotationsByDoc.set(docId, pageMap);
-                this.onStatusChange("✓ Synced with history.json");
-            }
-        } catch (e) {
-            console.warn("Could not load annotations from server:", e);
-            this.onStatusChange("Offline mode");
-        }
-        this.render();
-    }
-
-    async saveToHistory(docId, pageNum) {
-        const docMap = this.annotationsByDoc.get(docId) || new Map();
-        const pageAnnots = docMap.get(pageNum) || [];
-
-        const payload = {
-            docId: docId,
-            docTitle: this.engine.docProvider.currentTitle,
-            pageNum: pageNum,
-            annotations: pageAnnots,
-            timestamp: new Date().toISOString(),
-        };
-
-        try {
-            this.onStatusChange("Saving to history.json...");
-            const res = await fetch("/api/history", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-            if (res.ok) {
-                this.onStatusChange("✓ Saved to history.json");
-            } else {
-                this.onStatusChange("⚠ Save error");
-            }
-        } catch (err) {
-            console.warn("Failed to save to /api/history:", err);
-            this.onStatusChange("⚠ Offline (cached)");
-        }
-    }
-
-    triggerAutoSave(pageNum) {
-        clearTimeout(this.saveTimeout);
-        this.saveTimeout = setTimeout(() => {
-            this.saveToHistory(this.engine.docProvider.currentDocId, pageNum);
-        }, 700);
     }
 
     // =========================================================================
@@ -591,7 +518,6 @@ class AnnotationManager {
             list.push(stroke);
             this.undoStack.push({ action: "add", item: stroke });
             this.redoStack = [];
-            this.triggerAutoSave(stroke.pageNum);
         }
 
         this.render();
@@ -643,7 +569,6 @@ class AnnotationManager {
                 item: removed,
                 pageNum: hit.pageNum,
             });
-            this.triggerAutoSave(hit.pageNum);
             this.render();
         }
     }
@@ -690,7 +615,6 @@ class AnnotationManager {
                 list.push(note);
                 this.undoStack.push({ action: "add", item: note });
                 this.redoStack = [];
-                this.triggerAutoSave(hit.pageNum);
                 this.render();
             }
             closeDialog();
@@ -707,13 +631,11 @@ class AnnotationManager {
             if (idx !== -1) {
                 list.splice(idx, 1);
                 this.redoStack.push(op);
-                this.triggerAutoSave(op.item.pageNum);
             }
         } else if (op.action === "delete") {
             const list = this.getPageAnnotations(op.pageNum);
             list.push(op.item);
             this.redoStack.push(op);
-            this.triggerAutoSave(op.pageNum);
         }
         this.render();
     }
@@ -726,14 +648,12 @@ class AnnotationManager {
             const list = this.getPageAnnotations(op.item.pageNum);
             list.push(op.item);
             this.undoStack.push(op);
-            this.triggerAutoSave(op.item.pageNum);
         } else if (op.action === "delete") {
             const list = this.getPageAnnotations(op.pageNum);
             const idx = list.findIndex((a) => a.id === op.item.id);
             if (idx !== -1) {
                 list.splice(idx, 1);
                 this.undoStack.push(op);
-                this.triggerAutoSave(op.pageNum);
             }
         }
         this.render();
@@ -753,7 +673,6 @@ class AnnotationManager {
         pagesToClear.forEach((p) => {
             const list = this.getPageAnnotations(p);
             list.length = 0;
-            this.triggerAutoSave(p);
         });
 
         this.render();

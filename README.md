@@ -29,10 +29,9 @@ An exceptionally beautiful, tactile, and simple canvas-based flipbook web applic
     - 🎨 **Palette**: Luxury colors (Crimson, Cobalt Blue, Emerald, Amber Gold, Amethyst, White).
     - 📏 **Stroke Width**: Fine (2px), Medium (4px), Bold (8px).
     - 🧽 **Eraser / Undo / Redo / Clear Page**.
-- **Persistence (`history.json`)**:
-    - Annotations are **not** injected or saved into the PDF file itself.
-    - Annotations are saved externally into `history.json` via the Python backend API (`/api/history`), with automatic synchronization and a manual "Save" button with status indicator badge.
-    - Offline fallback to local storage if running without the server.
+- **Session Annotations**:
+    - Annotations are kept cleanly in memory outside the PDF file itself without altering the original document.
+    - Undo and Redo stacks for fast editing during reading.
 - **View & Theme Modes**:
     - **Dark Mode by default** (custom radial ambient lighting and eye-friendly dark paper mode).
     - **Two-Page View by default** with toggle for One-Page View.
@@ -45,15 +44,7 @@ An exceptionally beautiful, tactile, and simple canvas-based flipbook web applic
 
 ## 🚀 How to Run
 
-1. Open a terminal in this project directory:
-    ```powershell
-    python server.py
-    ```
-2. Open your web browser to:
-    ```
-    http://localhost:8080
-    ```
-3. Alternatively, you can double-click `index.html` to run in standalone client mode.
+Simply open `index.html` directly in any modern browser, or serve it with any static web server (such as Live Server or any static host).
 
 ---
 
@@ -76,8 +67,6 @@ An exceptionally beautiful, tactile, and simple canvas-based flipbook web applic
 
 ```
 bookReader++/
-├── server.py              # Zero-dependency Python HTTP server & /api/history handler
-├── history.json           # Stores all annotations outside the PDF
 ├── index.html             # Main reader markup with canvas stage & HUD
 ├── css/
 │   └── style.css          # Master stylesheet: dark theme, paper texture, glassmorphism
@@ -85,6 +74,6 @@ bookReader++/
 │   ├── pdf-loader.js      # PDF.js renderer & 12-page classic illustrated demo book
 │   ├── flipbook.js        # Canvas flip engine with paper physics, curl, drag & audio
 │   ├── annotations.js     # Vector annotation manager (pen, text, ellipse, rect, highlight)
-│   └── app.js             # Controller connecting gestures, HUD, and API persistence
-└── uploads/               # Directory for uploaded documents
+│   └── app.js             # Controller connecting gestures, HUD, and tool controls
+└── README.md
 ```

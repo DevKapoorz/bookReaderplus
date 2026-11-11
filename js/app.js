@@ -36,7 +36,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const fabContainer = document.getElementById("fabContainer");
     const fabMenuBtn = document.getElementById("fabMenuBtn");
     const optionsPalettePanel = document.getElementById("optionsPalettePanel");
-    const saveStatusIndicator = document.getElementById("saveStatusIndicator");
 
     const toolBtns = document.querySelectorAll(".tool-btn");
     const colorSwatches = document.querySelectorAll(".color-swatch");
@@ -44,9 +43,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     const btnEraserTool = document.getElementById("btnEraserTool");
     const btnUndoAnnot = document.getElementById("btnUndoAnnot");
     const btnClearPageAnnot = document.getElementById("btnClearPageAnnot");
-    const btnSaveHistoryManual = document.getElementById(
-        "btnSaveHistoryManual",
-    );
 
     const fileDropzoneOverlay = document.getElementById("fileDropzoneOverlay");
     const toastNotification = document.getElementById("toastNotification");
@@ -80,12 +76,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 3. Initialize Annotation Layer
     const annotationManager = new AnnotationManager(annotationCanvas, flipbook);
-    annotationManager.onStatusChange = (status) => {
-        saveStatusIndicator.textContent = status;
-    };
-
-    // Load annotations from history.json for default book
-    await annotationManager.loadFromHistory(docProvider.currentDocId);
 
     // Synchronize initial UI state
     updatePageControls(flipbook.getPageStatusInfo());
@@ -451,13 +441,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
-    // Save to history.json button
-    btnSaveHistoryManual.addEventListener("click", async () => {
-        const curDoc = docProvider.currentDocId;
-        const curPage = flipbook.currentPage;
-        await annotationManager.saveToHistory(curDoc, curPage);
-        showToast("Annotations saved to history.json");
-    });
+
 
     // =========================================================================
     // PDF Upload & File Loading
@@ -506,7 +490,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             bookTitleDisplay.textContent = info.title;
             flipbook.currentPage = 1; // Start on cover
             flipbook.resize();
-            await annotationManager.loadFromHistory(info.docId);
             updatePageControls(flipbook.getPageStatusInfo());
             showToast(`Loaded ${info.pageCount} pages`);
         } catch (err) {
