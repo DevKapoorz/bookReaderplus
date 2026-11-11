@@ -29,16 +29,12 @@ An exceptionally beautiful, tactile, and simple canvas-based flipbook web applic
     - 🎨 **Palette**: Luxury colors (Crimson, Cobalt Blue, Emerald, Amber Gold, Amethyst, White).
     - 📏 **Stroke Width**: Fine (2px), Medium (4px), Bold (8px).
     - 🧽 **Eraser / Undo / Redo / Clear Page**.
-- **Session Annotations**:
-    - Annotations are kept cleanly in memory outside the PDF file itself without altering the original document.
-    - Undo and Redo stacks for fast editing during reading.
-- **View & Theme Modes**:
-    - **Dark Mode by default** (custom radial ambient lighting and eye-friendly dark paper mode).
-    - **Two-Page View by default** with toggle for One-Page View.
-    - Smooth animated transitions between modes.
-- **Document Support**:
-    - Comes with a built-in 12-page illustrated classic book (_The Art of Reading: A Bibliophile's Compendium_), complete with title plate, table of contents, diagrams, engravings, quotes, and colophon.
-    - **Open Any PDF**: Click the PDF button or drag and drop any PDF file anywhere onto the book to render and read in the flipbook!
+- **LocalStorage Persistence**:
+    - Annotations are automatically saved to `localStorage` keyed by document ID.
+    - Reading progress is remembered: reopening a PDF resumes automatically at your last read page.
+- **Onboarding Drop Area**:
+    - Clean landing page with an interactive drag-and-drop zone and file picker.
+    - Fast 100% client-side PDF rendering with PDF.js.
 
 ---
 

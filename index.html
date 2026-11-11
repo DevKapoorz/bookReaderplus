@@ -36,7 +36,7 @@
                 <div class="brand-section">
                     <span class="brand-icon">📖</span>
                     <span class="book-title-display" id="bookTitleDisplay"
-                        >The Art of Reading</span
+                        >Flipbook Reader</span
                     >
                 </div>
 
@@ -200,6 +200,56 @@
 
             <!-- Center Book Viewport -->
             <main class="book-viewport" id="bookViewport">
+                <!-- Onboarding & PDF Drop Area (Active when no book is loaded) -->
+                <div class="onboarding-container" id="onboardingView">
+                    <div class="onboarding-card" id="onboardingCard">
+                        <div class="onboarding-icon-ring">
+                            <svg class="onboarding-pdf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="12" y1="18" x2="12" y2="12"></line>
+                                <line x1="9" y1="15" x2="15" y2="15"></line>
+                            </svg>
+                        </div>
+
+                        <h2 class="onboarding-title">Flipbook Reader</h2>
+                        <p class="onboarding-desc">
+                            Drop your PDF book to experience tactile, real-book page turning with offline annotations and reading progress.
+                        </p>
+
+                        <!-- The Drop Zone Box -->
+                        <div class="onboarding-drop-box" id="onboardingDropBox" tabindex="0" role="button" aria-label="Drop PDF file here or click to choose file">
+                            <input type="file" id="onboardingFileInput" accept="application/pdf" style="display: none;" />
+                            <div class="drop-illustration">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                            </div>
+                            <button class="onboarding-select-btn" id="btnOnboardingSelect" type="button">
+                                <span>Choose PDF File</span>
+                            </button>
+                            <span class="drop-caption">or drag & drop your PDF file here</span>
+                        </div>
+
+                        <div class="onboarding-pills-row">
+                            <span class="onboarding-pill">📖 3D Page Curling</span>
+                            <span class="onboarding-pill">💾 LocalStorage Memory</span>
+                            <span class="onboarding-pill">✏️ Pen & Highlight Notes</span>
+                        </div>
+
+                        <div class="onboarding-recent-box" id="onboardingRecentBox" style="display: none;">
+                            <span class="recent-label">Previous Document</span>
+                            <div class="recent-doc-info">
+                                <span class="recent-name" id="recentDocName"></span>
+                                <span class="recent-meta" id="recentDocMeta"></span>
+                            </div>
+                            <span class="recent-hint">Re-drop this document to resume reading & annotations.</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Canvases Stage -->
                 <div class="book-canvas-stage" id="bookCanvasStage">
                     <!-- Main canvas for book rendering, spine shadow, and page peeling animation -->

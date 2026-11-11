@@ -62,6 +62,62 @@ class AnnotationManager {
     }
 
     // =========================================================================
+    // LocalStorage Synchronization
+    // =========================================================================
+
+    loadFromLocalStorage(docId) {
+        if (!docId) return;
+        try {
+            const raw = localStorage.getItem(`flipbook_annotations_${docId}`);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                const pageMap = new Map();
+                for (const [pageNum, items] of Object.entries(parsed)) {
+                    if (Array.isArray(items)) {
+                        pageMap.set(parseInt(pageNum, 10), items);
+                    }
+                }
+                this.annotationsByDoc.set(docId, pageMap);
+            } else {
+                this.annotationsByDoc.set(docId, new Map());
+            }
+        } catch (e) {
+            console.warn("Failed to load annotations from localStorage:", e);
+        }
+        this.render();
+    }
+
+    saveToLocalStorage(docId) {
+        if (!docId) return;
+        try {
+            const docMap = this.annotationsByDoc.get(docId);
+            if (!docMap) return;
+            const obj = {};
+            for (const [pageNum, items] of docMap.entries()) {
+                if (Array.isArray(items) && items.length > 0) {
+                    obj[pageNum] = items;
+                }
+            }
+            localStorage.setItem(
+                `flipbook_annotations_${docId}`,
+                JSON.stringify(obj),
+            );
+        } catch (e) {
+            console.warn("Failed to save annotations to localStorage:", e);
+        }
+    }
+
+    persistCurrentDoc() {
+        if (
+            this.engine &&
+            this.engine.docProvider &&
+            this.engine.docProvider.currentDocId
+        ) {
+            this.saveToLocalStorage(this.engine.docProvider.currentDocId);
+        }
+    }
+
+    // =========================================================================
     // Coordinate Normalization & Hit Testing
     // =========================================================================
 
@@ -185,6 +241,11 @@ class AnnotationManager {
         ctx.translate(w / 2 + engine.panX, h / 2 + engine.panY);
         ctx.scale(engine.zoom, engine.zoom);
         ctx.translate(-w / 2, -h / 2);
+
+        if (!engine.docProvider || engine.docProvider.pageCount === 0) {
+            ctx.restore();
+            return;
+        }
 
         if (engine.isFlipping) {
             ctx.restore();
@@ -518,6 +579,7 @@ class AnnotationManager {
             list.push(stroke);
             this.undoStack.push({ action: "add", item: stroke });
             this.redoStack = [];
+            this.persistCurrentDoc();
         }
 
         this.render();
@@ -569,6 +631,7 @@ class AnnotationManager {
                 item: removed,
                 pageNum: hit.pageNum,
             });
+            this.persistCurrentDoc();
             this.render();
         }
     }
@@ -615,6 +678,7 @@ class AnnotationManager {
                 list.push(note);
                 this.undoStack.push({ action: "add", item: note });
                 this.redoStack = [];
+                this.persistCurrentDoc();
                 this.render();
             }
             closeDialog();
@@ -637,6 +701,7 @@ class AnnotationManager {
             list.push(op.item);
             this.redoStack.push(op);
         }
+        this.persistCurrentDoc();
         this.render();
     }
 
@@ -656,6 +721,7 @@ class AnnotationManager {
                 this.undoStack.push(op);
             }
         }
+        this.persistCurrentDoc();
         this.render();
     }
 
@@ -675,6 +741,7 @@ class AnnotationManager {
             list.length = 0;
         });
 
+        this.persistCurrentDoc();
         this.render();
         this.onStatusChange("Page cleared");
     }

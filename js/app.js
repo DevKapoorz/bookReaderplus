@@ -44,6 +44,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     const btnUndoAnnot = document.getElementById("btnUndoAnnot");
     const btnClearPageAnnot = document.getElementById("btnClearPageAnnot");
 
+    const onboardingView = document.getElementById("onboardingView");
+    const onboardingCard = document.getElementById("onboardingCard");
+    const onboardingDropBox = document.getElementById("onboardingDropBox");
+    const onboardingFileInput = document.getElementById("onboardingFileInput");
+    const btnOnboardingSelect = document.getElementById("btnOnboardingSelect");
+    const onboardingRecentBox = document.getElementById("onboardingRecentBox");
+    const recentDocName = document.getElementById("recentDocName");
+    const recentDocMeta = document.getElementById("recentDocMeta");
+
     const fileDropzoneOverlay = document.getElementById("fileDropzoneOverlay");
     const toastNotification = document.getElementById("toastNotification");
     const toastMessage = document.getElementById("toastMessage");
@@ -54,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
     }
 
-    // 1. Initialize Document Provider
+    // 1. Initialize Document Provider (Clean onboarding state)
     const docProvider = new DocumentProvider();
     await docProvider.init();
 
@@ -64,6 +73,25 @@ document.addEventListener("DOMContentLoaded", async () => {
         onPageChange: (info) => {
             updatePageControls(info);
             annotationManager.render();
+            if (docProvider.currentDocId && info.current > 0) {
+                localStorage.setItem(
+                    `flipbook_last_page_${docProvider.currentDocId}`,
+                    info.current,
+                );
+                try {
+                    const recentRaw = localStorage.getItem("flipbook_recent_doc");
+                    if (recentRaw) {
+                        const rec = JSON.parse(recentRaw);
+                        if (rec.docId === docProvider.currentDocId) {
+                            rec.lastPage = info.current;
+                            localStorage.setItem(
+                                "flipbook_recent_doc",
+                                JSON.stringify(rec),
+                            );
+                        }
+                    }
+                } catch (_) {}
+            }
         },
         onZoomChange: (pct) => {
             zoomIndicatorPill.textContent = `${pct}%`;
@@ -77,9 +105,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     // 3. Initialize Annotation Layer
     const annotationManager = new AnnotationManager(annotationCanvas, flipbook);
 
-    // Synchronize initial UI state
-    updatePageControls(flipbook.getPageStatusInfo());
-    bookTitleDisplay.textContent = docProvider.currentTitle;
+    // Initial state: Show onboarding if no PDF loaded
+    setAppReadingState(false);
+    updateRecentDocUI();
+
+    function setAppReadingState(hasBook) {
+        if (hasBook) {
+            document.body.classList.add("has-book");
+            if (onboardingView) onboardingView.style.display = "none";
+            if (bottomReadingBar) bottomReadingBar.style.display = "flex";
+            if (fabContainer) fabContainer.style.display = "block";
+            if (btnTurnPrevExtreme) btnTurnPrevExtreme.style.display = "";
+            if (btnTurnNextExtreme) btnTurnNextExtreme.style.display = "";
+        } else {
+            document.body.classList.remove("has-book");
+            if (onboardingView) onboardingView.style.display = "flex";
+            if (bottomReadingBar) bottomReadingBar.style.display = "none";
+            if (fabContainer) fabContainer.style.display = "none";
+            if (btnTurnPrevExtreme) btnTurnPrevExtreme.style.display = "none";
+            if (btnTurnNextExtreme) btnTurnNextExtreme.style.display = "none";
+            bookTitleDisplay.textContent = "Flipbook Reader";
+        }
+    }
+
+    function updateRecentDocUI() {
+        if (!onboardingRecentBox || !recentDocName || !recentDocMeta) return;
+        try {
+            const raw = localStorage.getItem("flipbook_recent_doc");
+            if (raw) {
+                const doc = JSON.parse(raw);
+                if (doc && doc.title) {
+                    recentDocName.textContent = doc.fileName || doc.title;
+                    recentDocMeta.textContent = `${doc.pageCount} pages • Last read: Page ${doc.lastPage || 1}`;
+                    onboardingRecentBox.style.display = "block";
+                    return;
+                }
+            }
+        } catch (_) {}
+        onboardingRecentBox.style.display = "none";
+    }
 
     function showToast(msg, duration = 2200) {
         toastMessage.textContent = msg;
@@ -458,7 +522,56 @@ document.addEventListener("DOMContentLoaded", async () => {
         pdfFileInput.value = "";
     });
 
-    // Drag & Drop PDF
+    // Onboarding Drop & Browse Handlers
+    if (btnOnboardingSelect && onboardingFileInput) {
+        btnOnboardingSelect.addEventListener("click", (e) => {
+            e.stopPropagation();
+            onboardingFileInput.click();
+        });
+    }
+
+    if (onboardingDropBox && onboardingFileInput) {
+        onboardingDropBox.addEventListener("click", () => {
+            onboardingFileInput.click();
+        });
+        onboardingDropBox.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onboardingFileInput.click();
+            }
+        });
+        onboardingDropBox.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            onboardingDropBox.classList.add("drag-active");
+        });
+        onboardingDropBox.addEventListener("dragleave", () => {
+            onboardingDropBox.classList.remove("drag-active");
+        });
+        onboardingDropBox.addEventListener("drop", async (e) => {
+            e.preventDefault();
+            onboardingDropBox.classList.remove("drag-active");
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                const file = e.dataTransfer.files[0];
+                if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
+                    await loadCustomPdf(file);
+                } else {
+                    alert("Please drop a valid PDF document.");
+                }
+            }
+        });
+    }
+
+    if (onboardingFileInput) {
+        onboardingFileInput.addEventListener("change", async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                await loadCustomPdf(file);
+            }
+            onboardingFileInput.value = "";
+        });
+    }
+
+    // Window Drag & Drop PDF
     window.addEventListener("dragover", (e) => {
         e.preventDefault();
         fileDropzoneOverlay.classList.add("drag-active");
@@ -488,10 +601,43 @@ document.addEventListener("DOMContentLoaded", async () => {
             showToast(`Loading "${file.name}"...`);
             const info = await docProvider.loadPdfFromFile(file);
             bookTitleDisplay.textContent = info.title;
-            flipbook.currentPage = 1; // Start on cover
+
+            // Restore last page from localStorage if previously visited
+            const savedLastPage = parseInt(
+                localStorage.getItem(`flipbook_last_page_${info.docId}`),
+                10,
+            );
+            flipbook.currentPage =
+                savedLastPage && savedLastPage >= 1 && savedLastPage <= info.pageCount
+                    ? savedLastPage
+                    : 1;
+
+            // Load saved annotations for this document from localStorage
+            annotationManager.loadFromLocalStorage(info.docId);
+
+            // Transition from onboarding to active book reader
+            setAppReadingState(true);
             flipbook.resize();
             updatePageControls(flipbook.getPageStatusInfo());
-            showToast(`Loaded ${info.pageCount} pages`);
+
+            // Save recent document record in localStorage
+            localStorage.setItem(
+                "flipbook_recent_doc",
+                JSON.stringify({
+                    docId: info.docId,
+                    title: info.title,
+                    pageCount: info.pageCount,
+                    lastPage: flipbook.currentPage,
+                    fileName: file.name,
+                    timestamp: Date.now(),
+                }),
+            );
+
+            showToast(
+                savedLastPage && savedLastPage > 1
+                    ? `Resumed "${file.name}" at Page ${flipbook.currentPage}`
+                    : `Opened "${file.name}" (${info.pageCount} pages)`,
+            );
         } catch (err) {
             console.error(err);
             alert("Failed to load PDF: " + err.message);

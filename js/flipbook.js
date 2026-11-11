@@ -211,6 +211,15 @@ class FlipbookEngine {
         const btnNext = document.getElementById("btnTurnNextExtreme");
         if (!btnPrev || !btnNext) return;
 
+        if (!this.docProvider || this.docProvider.pageCount === 0) {
+            btnPrev.style.display = "none";
+            btnNext.style.display = "none";
+            return;
+        } else {
+            btnPrev.style.display = "";
+            btnNext.style.display = "";
+        }
+
         const w = this.stageWidth;
         const h = this.stageHeight;
         const bx = this.bookX;
@@ -339,7 +348,15 @@ class FlipbookEngine {
     }
 
     getPageStatusInfo() {
-        const total = this.docProvider.pageCount;
+        const total = this.docProvider ? this.docProvider.pageCount : 0;
+        if (total === 0) {
+            return {
+                label: "No document loaded",
+                current: 0,
+                total: 0,
+                isTwoPage: this.isTwoPage,
+            };
+        }
         if (this.currentPage === 1) {
             return {
                 label: `Cover (Page 1 of ${total})`,
@@ -472,6 +489,9 @@ class FlipbookEngine {
     }
 
     renderStaticBook(ctx) {
+        if (!this.docProvider || this.docProvider.pageCount === 0) {
+            return;
+        }
         const isDark = document.body.classList.contains("dark-mode");
 
         // Case 1: One-Page View Mode (Single centered page)
@@ -572,6 +592,9 @@ class FlipbookEngine {
     }
 
     renderFlippingBook(ctx) {
+        if (!this.docProvider || this.docProvider.pageCount === 0) {
+            return;
+        }
         const isDark = document.body.classList.contains("dark-mode");
         const progress = this.flipProgress;
         const dir = this.flipDirection;
