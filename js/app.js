@@ -115,27 +115,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     function setAppReadingState(hasBook) {
         if (hasBook) {
             document.body.classList.add("has-book");
-            if (onboardingView) onboardingView.style.display = "none";
-            if (topNavbar) {
-                topNavbar.style.display = "";
-                topNavbar.classList.remove("hud-hidden");
-            }
-            if (bottomReadingBar) {
-                bottomReadingBar.style.display = "flex";
-                bottomReadingBar.classList.remove("hud-hidden");
-            }
-            if (fabContainer) fabContainer.style.display = "block";
-            if (btnTurnPrevExtreme) btnTurnPrevExtreme.style.display = "";
-            if (btnTurnNextExtreme) btnTurnNextExtreme.style.display = "";
+            if (topNavbar) topNavbar.classList.remove("hud-hidden");
+            if (bottomReadingBar) bottomReadingBar.classList.remove("hud-hidden");
             scheduleHudHide();
         } else {
             document.body.classList.remove("has-book");
-            if (onboardingView) onboardingView.style.display = "flex";
-            if (topNavbar) topNavbar.style.display = "none";
-            if (bottomReadingBar) bottomReadingBar.style.display = "none";
-            if (fabContainer) fabContainer.style.display = "none";
-            if (btnTurnPrevExtreme) btnTurnPrevExtreme.style.display = "none";
-            if (btnTurnNextExtreme) btnTurnNextExtreme.style.display = "none";
             bookTitleDisplay.textContent = "Flipbook Reader";
         }
     }
@@ -626,7 +610,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     async function loadCustomPdf(file) {
         try {
+            if (onboardingCard) {
+                onboardingCard.classList.add("is-loading");
+            }
+            if (btnOnboardingSelect) {
+                btnOnboardingSelect.innerHTML = `
+                    <svg class="spin-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                        <path d="M12 2a10 10 0 0 1 10 10"></path>
+                    </svg>
+                    <span>Opening "${file.name}"...</span>
+                `;
+            }
             showToast(`Loading "${file.name}"...`);
+
             const info = await docProvider.loadPdfFromFile(file);
             bookTitleDisplay.textContent = info.title;
 
@@ -643,7 +640,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             // Load saved annotations for this document from localStorage
             annotationManager.loadFromLocalStorage(info.docId);
 
-            // Transition from onboarding to active book reader
+            // Transition from onboarding to active book reader smoothly
             setAppReadingState(true);
             flipbook.resize();
             updatePageControls(flipbook.getPageStatusInfo());
@@ -669,6 +666,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         } catch (err) {
             console.error(err);
             alert("Failed to load PDF: " + err.message);
+        } finally {
+            if (onboardingCard) {
+                onboardingCard.classList.remove("is-loading");
+            }
+            if (btnOnboardingSelect) {
+                btnOnboardingSelect.innerHTML = `
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span>Choose PDF File</span>
+                `;
+            }
         }
     }
 

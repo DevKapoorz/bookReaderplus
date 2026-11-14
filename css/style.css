@@ -329,10 +329,17 @@ body.light-mode [data-tooltip]::after {
 .book-canvas-stage {
     position: relative;
     transform-origin: center center;
-    transition: transform 0.1s ease-out;
     display: flex;
     align-items: center;
     justify-content: center;
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    visibility: visible;
+    pointer-events: auto;
+    transition:
+        opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.12s,
+        transform 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.12s,
+        visibility 0.5s 0.12s;
 }
 
 /* Main book canvas */
@@ -1088,19 +1095,111 @@ body.light-mode .page-slider {
     justify-content: center;
     padding: 24px;
     z-index: 50;
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    visibility: visible;
     pointer-events: auto;
+    transition:
+        opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+        visibility 0.45s;
 }
 
 body.has-book .onboarding-container {
-    display: none !important;
+    opacity: 0 !important;
+    transform: scale(0.96) translateY(-16px) !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
 }
 
-body:not(.has-book) .top-navbar,
-body:not(.has-book) .book-canvas-stage,
-body:not(.has-book) .bottom-reading-bar,
-body:not(.has-book) .fab-container,
+body:not(.has-book) .book-canvas-stage {
+    opacity: 0 !important;
+    transform: scale(0.96) translateY(18px) !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition:
+        opacity 0.35s ease,
+        transform 0.35s ease,
+        visibility 0.35s;
+}
+
+body:not(.has-book) .top-navbar {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateX(-50%) translateY(-22px) !important;
+    visibility: hidden !important;
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s ease,
+        visibility 0.3s;
+}
+
+body.has-book .top-navbar {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+    transition:
+        opacity 0.45s ease 0.15s,
+        transform 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.15s,
+        visibility 0.45s 0.15s;
+}
+
+body:not(.has-book) .bottom-reading-bar {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateX(-50%) translateY(22px) !important;
+    visibility: hidden !important;
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s ease,
+        visibility 0.3s;
+}
+
+body.has-book .bottom-reading-bar {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+    transition:
+        opacity 0.45s ease 0.2s,
+        transform 0.45s cubic-bezier(0.16, 1, 0.3, 1) 0.2s,
+        visibility 0.45s 0.2s;
+}
+
+body:not(.has-book) .fab-container {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: scale(0.8) translateY(14px) !important;
+    visibility: hidden !important;
+    transition:
+        opacity 0.3s ease,
+        transform 0.3s ease,
+        visibility 0.3s;
+}
+
+body.has-book .fab-container {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+    transition:
+        opacity 0.4s ease 0.25s,
+        transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.25s,
+        visibility 0.4s 0.25s;
+}
+
 body:not(.has-book) .extreme-turn-btn {
-    display: none !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    transition: opacity 0.3s ease, visibility 0.3s;
+}
+
+body.has-book .extreme-turn-btn {
+    transition:
+        opacity 0.45s ease 0.25s,
+        transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+        background 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .onboarding-card {
@@ -1304,4 +1403,19 @@ body:not(.has-book) .extreme-turn-btn {
     font-size: 0.72rem;
     color: var(--text-muted);
     margin-top: 4px;
+}
+
+@keyframes spinClockwise {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.spin-icon {
+    animation: spinClockwise 0.8s linear infinite;
+}
+
+.onboarding-card.is-loading {
+    pointer-events: none;
+    opacity: 0.85;
 }
