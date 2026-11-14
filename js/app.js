@@ -18,6 +18,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const sliderPageBubble = document.getElementById("sliderPageBubble");
     const zoomIndicatorPill = document.getElementById("zoomIndicatorPill");
 
+    const topNavbar = document.getElementById("topNavbar");
+    const bottomReadingBar = document.getElementById("bottomReadingBar");
+
     const btnOpenPdf = document.getElementById("btnOpenPdf");
     const pdfFileInput = document.getElementById("pdfFileInput");
     const btnToggleSpread = document.getElementById("btnToggleSpread");
@@ -113,13 +116,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (hasBook) {
             document.body.classList.add("has-book");
             if (onboardingView) onboardingView.style.display = "none";
-            if (bottomReadingBar) bottomReadingBar.style.display = "flex";
+            if (topNavbar) {
+                topNavbar.style.display = "";
+                topNavbar.classList.remove("hud-hidden");
+            }
+            if (bottomReadingBar) {
+                bottomReadingBar.style.display = "flex";
+                bottomReadingBar.classList.remove("hud-hidden");
+            }
             if (fabContainer) fabContainer.style.display = "block";
             if (btnTurnPrevExtreme) btnTurnPrevExtreme.style.display = "";
             if (btnTurnNextExtreme) btnTurnNextExtreme.style.display = "";
+            scheduleHudHide();
         } else {
             document.body.classList.remove("has-book");
             if (onboardingView) onboardingView.style.display = "flex";
+            if (topNavbar) topNavbar.style.display = "none";
             if (bottomReadingBar) bottomReadingBar.style.display = "none";
             if (fabContainer) fabContainer.style.display = "none";
             if (btnTurnPrevExtreme) btnTurnPrevExtreme.style.display = "none";
@@ -561,6 +573,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
+    if (onboardingRecentBox && onboardingFileInput) {
+        onboardingRecentBox.addEventListener("click", () => {
+            onboardingFileInput.click();
+        });
+    }
+
     if (onboardingFileInput) {
         onboardingFileInput.addEventListener("change", async (e) => {
             const file = e.target.files[0];
@@ -574,21 +592,31 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Window Drag & Drop PDF
     window.addEventListener("dragover", (e) => {
         e.preventDefault();
-        fileDropzoneOverlay.classList.add("drag-active");
+        if (document.body.classList.contains("has-book")) {
+            fileDropzoneOverlay.classList.add("drag-active");
+        } else if (onboardingDropBox) {
+            onboardingDropBox.classList.add("drag-active");
+        }
     });
 
     window.addEventListener("dragleave", (e) => {
         if (e.relatedTarget === null) {
             fileDropzoneOverlay.classList.remove("drag-active");
+            if (onboardingDropBox) {
+                onboardingDropBox.classList.remove("drag-active");
+            }
         }
     });
 
     window.addEventListener("drop", async (e) => {
         e.preventDefault();
         fileDropzoneOverlay.classList.remove("drag-active");
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        if (onboardingDropBox) {
+            onboardingDropBox.classList.remove("drag-active");
+        }
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
             const file = e.dataTransfer.files[0];
-            if (file.type === "application/pdf" || file.name.endsWith(".pdf")) {
+            if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
                 await loadCustomPdf(file);
             } else {
                 alert("Please drop a valid PDF document.");
@@ -700,26 +728,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Tab-Active & Inactivity Auto-Hide Controller (Titlebar & Pages HUD)
     // "visible only when the tab is active and then they go invisible after some time of inactivity"
     // =========================================================================
-    const topNavbar = document.getElementById("topNavbar");
-    const bottomReadingBar = document.getElementById("bottomReadingBar");
-
     let hudInactivityTimer = null;
     const INACTIVITY_DELAY = 2600; // 2.6 seconds of inactivity to auto-hide
     let isMouseOverHud = false;
     let isTabActive = !document.hidden;
 
     function showHud() {
-        if (!isTabActive) return; // Only visible when tab is active
-        topNavbar.classList.remove("hud-hidden");
-        bottomReadingBar.classList.remove("hud-hidden");
+        if (!isTabActive || !document.body.classList.contains("has-book")) return;
+        if (topNavbar) topNavbar.classList.remove("hud-hidden");
+        if (bottomReadingBar) bottomReadingBar.classList.remove("hud-hidden");
         scheduleHudHide();
     }
 
     function hideHud() {
-        if (isMouseOverHud || fabContainer.classList.contains("is-open"))
+        if (
+            isMouseOverHud ||
+            fabContainer.classList.contains("is-open") ||
+            !document.body.classList.contains("has-book")
+        ) {
             return;
-        topNavbar.classList.add("hud-hidden");
-        bottomReadingBar.classList.add("hud-hidden");
+        }
+        if (topNavbar) topNavbar.classList.add("hud-hidden");
+        if (bottomReadingBar) bottomReadingBar.classList.add("hud-hidden");
     }
 
     function scheduleHudHide() {

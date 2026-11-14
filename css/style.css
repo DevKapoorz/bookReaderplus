@@ -1095,6 +1095,7 @@ body.has-book .onboarding-container {
     display: none !important;
 }
 
+body:not(.has-book) .top-navbar,
 body:not(.has-book) .book-canvas-stage,
 body:not(.has-book) .bottom-reading-bar,
 body:not(.has-book) .fab-container,
@@ -1256,6 +1257,14 @@ body:not(.has-book) .extreme-turn-btn {
     border: 1px solid var(--border-glass);
     border-radius: var(--radius-md);
     text-align: left;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.onboarding-recent-box:hover {
+    background: rgba(201, 168, 106, 0.06);
+    border-color: var(--accent-gold);
+    transform: translateY(-1px);
 }
 
 .recent-label {
