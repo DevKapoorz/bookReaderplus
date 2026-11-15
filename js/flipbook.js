@@ -307,6 +307,17 @@ class FlipbookEngine {
         return { left: leftPage, right: rightPage };
     }
 
+    isPageVisible(pageNum) {
+        if (!pageNum || !this.docProvider || this.docProvider.pageCount === 0) {
+            return false;
+        }
+        if (!this.isTwoPage || this.currentPage === 1) {
+            return this.currentPage === pageNum;
+        }
+        const spread = this.getSpreadPages();
+        return spread.left === pageNum || spread.right === pageNum;
+    }
+
     canGoNext() {
         return (
             this.currentPage < this.docProvider.pageCount && !this.isFlipping
@@ -329,10 +340,22 @@ class FlipbookEngine {
         this.animateFlip(-1);
     }
 
-    goToPage(pageNum) {
+    async goToPage(pageNum) {
         if (this.isFlipping) return;
         pageNum = Math.max(1, Math.min(pageNum, this.docProvider.pageCount));
         if (pageNum === this.currentPage) return;
+
+        if (this.docProvider && typeof this.docProvider.ensurePages === "function") {
+            const pagesToEnsure = [pageNum];
+            if (this.isTwoPage && pageNum > 1) {
+                const spreadLeft = pageNum % 2 === 0 ? pageNum : pageNum - 1;
+                pagesToEnsure.push(spreadLeft);
+                if (spreadLeft + 1 <= this.docProvider.pageCount) {
+                    pagesToEnsure.push(spreadLeft + 1);
+                }
+            }
+            await this.docProvider.ensurePages(pagesToEnsure);
+        }
 
         const dir = pageNum > this.currentPage ? 1 : -1;
         this.playTurnSound();
@@ -1096,6 +1119,21 @@ class FlipbookEngine {
         } else {
             const isDark = document.body.classList.contains("dark-mode");
             this.drawBlankPage(ctx, x, y, w, h, isDark);
+            if (
+                this.docProvider &&
+                typeof this.docProvider.renderPdfPage === "function" &&
+                pageNum >= 1 &&
+                pageNum <= this.docProvider.pageCount
+            ) {
+                this.docProvider.renderPdfPage(pageNum).then((cvs) => {
+                    if (cvs && this.isPageVisible(pageNum)) {
+                        this.render();
+                        if (window.annotationManager) {
+                            window.annotationManager.render();
+                        }
+                    }
+                });
+            }
         }
     }
 

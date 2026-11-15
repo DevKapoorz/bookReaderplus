@@ -107,6 +107,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 3. Initialize Annotation Layer
     const annotationManager = new AnnotationManager(annotationCanvas, flipbook);
+    window.annotationManager = annotationManager;
+
+    // Re-render automatically whenever any visible page finishes rendering
+    docProvider.onPageRendered = (pageNum) => {
+        if (
+            flipbook &&
+            typeof flipbook.isPageVisible === "function" &&
+            flipbook.isPageVisible(pageNum)
+        ) {
+            flipbook.render();
+            annotationManager.render();
+        }
+    };
 
     // Initial state: Show onboarding if no PDF loaded
     setAppReadingState(false);
@@ -624,18 +637,29 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
             showToast(`Loading "${file.name}"...`);
 
-            const info = await docProvider.loadPdfFromFile(file);
-            bookTitleDisplay.textContent = info.title;
-
-            // Restore last page from localStorage if previously visited
+            // Compute expected docId and targetPage before loading so PDF loader prioritizes rendering it
+            const docId = `pdf_${file.name.replace(/[^a-zA-Z0-9_-]/g, "_")}_${file.size}`;
             const savedLastPage = parseInt(
-                localStorage.getItem(`flipbook_last_page_${info.docId}`),
+                localStorage.getItem(`flipbook_last_page_${docId}`),
                 10,
             );
+            const targetPage =
+                savedLastPage && savedLastPage >= 1 ? savedLastPage : 1;
+
+            const info = await docProvider.loadPdfFromFile(file, targetPage);
+            bookTitleDisplay.textContent = info.title;
+
             flipbook.currentPage =
-                savedLastPage && savedLastPage >= 1 && savedLastPage <= info.pageCount
-                    ? savedLastPage
-                    : 1;
+                targetPage <= info.pageCount ? targetPage : 1;
+
+            // Ensure current spread pages are fully rendered before drawing
+            const spreadToEnsure = [flipbook.currentPage];
+            if (flipbook.isTwoPage && flipbook.currentPage > 1) {
+                const spread = flipbook.getSpreadPages();
+                if (spread.left) spreadToEnsure.push(spread.left);
+                if (spread.right) spreadToEnsure.push(spread.right);
+            }
+            await docProvider.ensurePages(spreadToEnsure);
 
             // Load saved annotations for this document from localStorage
             annotationManager.loadFromLocalStorage(info.docId);
@@ -644,6 +668,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             setAppReadingState(true);
             flipbook.resize();
             updatePageControls(flipbook.getPageStatusInfo());
+            annotationManager.render();
 
             // Save recent document record in localStorage
             localStorage.setItem(
