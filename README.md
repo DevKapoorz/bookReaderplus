@@ -38,12 +38,6 @@ An exceptionally beautiful, tactile, and simple canvas-based flipbook web applic
 
 ---
 
-## 🚀 How to Run
-
-Simply open `index.html` directly in any modern browser, or serve it with any static web server (such as Live Server or any static host).
-
----
-
 ## ⌨️ Keyboard Shortcuts
 
 | Shortcut                         | Action                                        |
@@ -56,20 +50,3 @@ Simply open `index.html` directly in any modern browser, or serve it with any st
 | `Ctrl + Y` or `Ctrl + Shift + Z` | Redo Annotation                               |
 | `Ctrl + Wheel` / `Pinch`         | Zoom In / Out                                 |
 | `Esc`                            | Return to Reading Mode (Deselect active tool) |
-
----
-
-## 📂 File Structure
-
-```
-bookReader++/
-├── index.html             # Main reader markup with canvas stage & HUD
-├── css/
-│   └── style.css          # Master stylesheet: dark theme, paper texture, glassmorphism
-├── js/
-│   ├── pdf-loader.js      # PDF.js renderer & 12-page classic illustrated demo book
-│   ├── flipbook.js        # Canvas flip engine with paper physics, curl, drag & audio
-│   ├── annotations.js     # Vector annotation manager (pen, text, ellipse, rect, highlight)
-│   └── app.js             # Controller connecting gestures, HUD, and tool controls
-└── README.md
-```
