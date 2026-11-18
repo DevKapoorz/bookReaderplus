@@ -39,12 +39,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     const fabContainer = document.getElementById("fabContainer");
     const fabMenuBtn = document.getElementById("fabMenuBtn");
     const optionsPalettePanel = document.getElementById("optionsPalettePanel");
+    const btnPaletteClose = document.getElementById("btnPaletteClose");
+    const activeToolPill = document.getElementById("activeToolPill");
+    const toolPropertiesSection = document.getElementById("toolPropertiesSection");
 
     const toolBtns = document.querySelectorAll(".tool-btn");
     const colorSwatches = document.querySelectorAll(".color-swatch");
     const strokeChips = document.querySelectorAll(".stroke-chip");
     const btnEraserTool = document.getElementById("btnEraserTool");
     const btnUndoAnnot = document.getElementById("btnUndoAnnot");
+    const btnRedoAnnot = document.getElementById("btnRedoAnnot");
     const btnClearPageAnnot = document.getElementById("btnClearPageAnnot");
 
     const onboardingView = document.getElementById("onboardingView");
@@ -428,12 +432,19 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // =========================================================================
     // Floating Circle with Three Dots & Options Menu
-    // Hover or click opens the options
+    // Hover opens the options smoothly; clicking locks/toggles it
     // =========================================================================
     fabMenuBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         fabContainer.classList.toggle("is-open");
     });
+
+    if (btnPaletteClose) {
+        btnPaletteClose.addEventListener("click", (e) => {
+            e.stopPropagation();
+            fabContainer.classList.remove("is-open");
+        });
+    }
 
     // Close fab on outside click
     document.addEventListener("click", (e) => {
@@ -443,47 +454,111 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     // =========================================================================
-    // Tool Selection (Annotate, Highlighter, Text, Ellipse, Rectangle)
+    // Unified Tool State Controller (Pen, Highlight, Text, Rectangle, Ellipse, Eraser)
     // =========================================================================
+    function updateToolUiState(tool) {
+        // 1. Synchronize tool buttons
+        toolBtns.forEach((b) => {
+            b.classList.toggle("active", b.dataset.tool === tool);
+        });
+
+        // 2. Synchronize active tool status pill in header
+        if (activeToolPill) {
+            const dot = activeToolPill.querySelector(".active-dot");
+            const label = activeToolPill.querySelector(".active-label");
+            if (tool) {
+                const labels = {
+                    draw: "Pen Active",
+                    highlighter: "Highlight Active",
+                    text: "Text Active",
+                    rectangle: "Rectangle Active",
+                    ellipse: "Ellipse Active",
+                    eraser: "Eraser Active",
+                };
+                if (label) label.textContent = labels[tool] || `${tool} Active`;
+                if (dot) {
+                    dot.style.backgroundColor =
+                        tool === "eraser"
+                            ? "#ff5a79"
+                            : annotationManager.currentColor;
+                    dot.style.transform = "scale(1.25)";
+                }
+            } else {
+                if (label) label.textContent = "Reading Mode";
+                if (dot) {
+                    dot.style.backgroundColor = "#888888";
+                    dot.style.transform = "scale(1)";
+                }
+            }
+        }
+
+        // 3. Update FAB 3-dots circle engagement ring & active color
+        if (tool) {
+            fabMenuBtn.classList.add("tool-engaged");
+            const activeColor =
+                tool === "eraser"
+                    ? "#ff5a79"
+                    : annotationManager.currentColor;
+            fabMenuBtn.style.setProperty("--tool-active-color", activeColor);
+        } else {
+            fabMenuBtn.classList.remove("tool-engaged");
+            fabMenuBtn.style.removeProperty("--tool-active-color");
+        }
+
+        // 4. Dim/disable properties section if Eraser is active
+        if (toolPropertiesSection) {
+            toolPropertiesSection.classList.toggle("is-disabled", tool === "eraser");
+        }
+    }
+
+    // Connect AnnotationManager callbacks
+    annotationManager.onToolChange = (tool) => {
+        updateToolUiState(tool);
+    };
+
+    annotationManager.onHistoryChange = ({ canUndo, canRedo }) => {
+        if (btnUndoAnnot) btnUndoAnnot.disabled = !canUndo;
+        if (btnRedoAnnot) btnRedoAnnot.disabled = !canRedo;
+    };
+    annotationManager.notifyHistoryChange();
+
+    annotationManager.onStatusChange = (status) => {
+        if (status) showToast(status);
+    };
+
+    // Tool Buttons (Includes all 6: Pen, Highlight, Text, Rectangle, Ellipse, Eraser)
     toolBtns.forEach((btn) => {
         btn.addEventListener("click", () => {
             const tool = btn.dataset.tool;
             if (annotationManager.activeTool === tool) {
                 // Deselect tool -> Return to normal reading mode
-                btn.classList.remove("active");
                 annotationManager.setTool(null);
                 showToast("Reading Mode");
             } else {
-                toolBtns.forEach((b) => b.classList.remove("active"));
-                btnEraserTool.classList.remove("active");
-                btn.classList.add("active");
                 annotationManager.setTool(tool);
 
                 const labels = {
-                    draw: "Pen Annotate",
-                    highlighter: "Highlighter",
-                    text: "Text Write (Click on page)",
-                    rectangle: "Rectangle Shape",
-                    ellipse: "Ellipse Shape",
+                    draw: "Pen Annotate (Draw freely)",
+                    highlighter: "Highlighter (Mark text)",
+                    text: "Text Note (Click page to place)",
+                    rectangle: "Rectangle Shape (Drag to draw)",
+                    ellipse: "Ellipse Shape (Drag to draw)",
+                    eraser: "Eraser (Click mark to erase)",
                 };
                 showToast(labels[tool] || tool);
             }
         });
     });
 
-    // Eraser Tool
-    btnEraserTool.addEventListener("click", () => {
-        if (annotationManager.activeTool === "eraser") {
-            btnEraserTool.classList.remove("active");
-            annotationManager.setTool(null);
-            showToast("Reading Mode");
-        } else {
-            toolBtns.forEach((b) => b.classList.remove("active"));
-            btnEraserTool.classList.add("active");
-            annotationManager.setTool("eraser");
-            showToast("Eraser (Click any note/mark to erase)");
-        }
-    });
+    // Header Status Pill Click -> Quick Switch to Reading Mode
+    if (activeToolPill) {
+        activeToolPill.addEventListener("click", () => {
+            if (annotationManager.activeTool) {
+                annotationManager.setTool(null);
+                showToast("Reading Mode");
+            }
+        });
+    }
 
     // Color Swatches
     colorSwatches.forEach((swatch) => {
@@ -503,10 +578,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     });
 
-    // Undo & Clear
+    // Undo, Redo & Clear
     btnUndoAnnot.addEventListener("click", () => {
         annotationManager.undo();
     });
+
+    if (btnRedoAnnot) {
+        btnRedoAnnot.addEventListener("click", () => {
+            annotationManager.redo();
+        });
+    }
 
     btnClearPageAnnot.addEventListener("click", () => {
         if (confirm("Clear all annotations on this page?")) {
@@ -747,8 +828,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             e.preventDefault();
             annotationManager.redo();
         } else if (e.key === "Escape") {
-            toolBtns.forEach((b) => b.classList.remove("active"));
-            btnEraserTool.classList.remove("active");
             annotationManager.setTool(null);
             fabContainer.classList.remove("is-open");
         }
@@ -780,6 +859,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (
             isMouseOverHud ||
             fabContainer.classList.contains("is-open") ||
+            window.isAnnotationActive ||
             !document.body.classList.contains("has-book")
         ) {
             return;

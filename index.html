@@ -323,221 +323,237 @@
             <!-- A Small Circle with Three Dots & Floating Options Palette
          "a small circle with three dots ... hovering which opens options and options are as annotate , text write , shapes like ellipse , rectangle , highlighter .." -->
             <div class="fab-container" id="fabContainer">
-                <!-- Floating Options Palette (Reveals smoothly on hover of 3-dots circle) -->
-                <aside class="options-palette-panel" id="optionsPalettePanel">
+                <!-- Floating Options Palette (Reveals smoothly on hover of 3-dots circle or toggle) -->
+                <aside class="options-palette-panel" id="optionsPalettePanel" aria-label="Tools and Annotations">
                     <div class="panel-header">
-                        <span class="panel-title">Tools & Annotations</span>
-                    </div>
-
-                    <!-- Annotation Tools Grid -->
-                    <div class="tools-grid">
-                        <!-- Annotate (Pen) -->
-                        <button
-                            class="tool-btn"
-                            data-tool="draw"
-                            data-tooltip="Pen Annotate"
-                        >
-                            <svg viewBox="0 0 24 24">
-                                <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
-                                <path
-                                    d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"
-                                ></path>
-                                <path d="M2 2l7.586 7.586"></path>
-                                <circle cx="11" cy="11" r="2"></circle>
-                            </svg>
-                            <span>Annotate</span>
-                        </button>
-
-                        <!-- Highlighter -->
-                        <button
-                            class="tool-btn"
-                            data-tool="highlighter"
-                            data-tooltip="Highlighter"
-                        >
-                            <svg viewBox="0 0 24 24">
-                                <path d="m9 11-6 6v3h3l6-6"></path>
-                                <path
-                                    d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"
-                                ></path>
-                            </svg>
-                            <span>Highlight</span>
-                        </button>
-
-                        <!-- Text Write -->
-                        <button
-                            class="tool-btn"
-                            data-tool="text"
-                            data-tooltip="Text Note"
-                        >
-                            <svg viewBox="0 0 24 24">
-                                <polyline points="4 7 4 4 20 4 20 7"></polyline>
-                                <line x1="9" y1="20" x2="15" y2="20"></line>
-                                <line x1="12" y1="4" x2="12" y2="20"></line>
-                            </svg>
-                            <span>Text</span>
-                        </button>
-
-                        <!-- Rectangle -->
-                        <button
-                            class="tool-btn"
-                            data-tool="rectangle"
-                            data-tooltip="Rectangle"
-                        >
-                            <svg viewBox="0 0 24 24">
-                                <rect
-                                    x="3"
-                                    y="3"
-                                    width="18"
-                                    height="18"
-                                    rx="2"
-                                    ry="2"
-                                ></rect>
-                            </svg>
-                            <span>Rectangle</span>
-                        </button>
-
-                        <!-- Ellipse -->
-                        <button
-                            class="tool-btn"
-                            data-tool="ellipse"
-                            data-tooltip="Ellipse"
-                        >
-                            <svg viewBox="0 0 24 24">
-                                <ellipse
-                                    cx="12"
-                                    cy="12"
-                                    rx="9"
-                                    ry="6"
-                                ></ellipse>
-                            </svg>
-                            <span>Ellipse</span>
-                        </button>
-                    </div>
-
-                    <!-- Color Palette & Stroke Size -->
-                    <div class="palette-row">
-                        <div class="colors-list" id="colorsList">
-                            <div
-                                class="color-swatch active"
-                                data-color="#e63946"
-                                style="background: #e63946"
-                                data-tooltip="Crimson"
-                            ></div>
-                            <div
-                                class="color-swatch"
-                                data-color="#3a86ff"
-                                style="background: #3a86ff"
-                                data-tooltip="Cobalt Blue"
-                            ></div>
-                            <div
-                                class="color-swatch"
-                                data-color="#2a9d8f"
-                                style="background: #2a9d8f"
-                                data-tooltip="Emerald"
-                            ></div>
-                            <div
-                                class="color-swatch"
-                                data-color="#f4a261"
-                                style="background: #f4a261"
-                                data-tooltip="Amber Gold"
-                            ></div>
-                            <div
-                                class="color-swatch"
-                                data-color="#9d4edd"
-                                style="background: #9d4edd"
-                                data-tooltip="Amethyst"
-                            ></div>
-                            <div
-                                class="color-swatch"
-                                data-color="#ffffff"
-                                style="background: #ffffff"
-                                data-tooltip="White"
-                            ></div>
+                        <div class="panel-header-left">
+                            <span class="panel-title">Tools & Notes</span>
+                            <button class="active-tool-pill" id="activeToolPill" data-tooltip="Click to switch to Reading Mode">
+                                <span class="active-dot"></span>
+                                <span class="active-label">Reading Mode</span>
+                            </button>
                         </div>
+                        <button class="panel-close-btn" id="btnPaletteClose" aria-label="Close tools panel" data-tooltip="Close (Esc)">
+                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </button>
+                    </div>
 
-                        <div class="stroke-size-selector">
-                            <div
-                                class="stroke-chip fine"
-                                data-width="2"
-                                data-tooltip="Fine 2px"
+                    <!-- Primary Annotation Tools Grid (6 Unified Tools) -->
+                    <div class="tools-grid-section">
+                        <div class="tools-grid">
+                            <!-- Annotate (Pen) -->
+                            <button
+                                class="tool-btn"
+                                data-tool="draw"
+                                data-tooltip="Pen Annotate (Draw)"
+                                aria-label="Pen Annotate"
                             >
-                                <div class="dot"></div>
-                            </div>
-                            <div
-                                class="stroke-chip med active"
-                                data-width="4"
-                                data-tooltip="Medium 4px"
+                                <svg viewBox="0 0 24 24">
+                                    <path d="M12 19l7-7 3 3-7 7-3-3z"></path>
+                                    <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"></path>
+                                    <path d="M2 2l7.586 7.586"></path>
+                                    <circle cx="11" cy="11" r="2"></circle>
+                                </svg>
+                                <span>Pen</span>
+                            </button>
+
+                            <!-- Highlighter -->
+                            <button
+                                class="tool-btn"
+                                data-tool="highlighter"
+                                data-tooltip="Highlighter Marker"
+                                aria-label="Highlighter"
                             >
-                                <div class="dot"></div>
-                            </div>
-                            <div
-                                class="stroke-chip bold"
-                                data-width="8"
-                                data-tooltip="Bold 8px"
+                                <svg viewBox="0 0 24 24">
+                                    <path d="m9 11-6 6v3h3l6-6"></path>
+                                    <path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"></path>
+                                </svg>
+                                <span>Highlight</span>
+                            </button>
+
+                            <!-- Text Write -->
+                            <button
+                                class="tool-btn"
+                                data-tool="text"
+                                data-tooltip="Text Note (Click page to place)"
+                                aria-label="Text Note"
                             >
-                                <div class="dot"></div>
-                            </div>
+                                <svg viewBox="0 0 24 24">
+                                    <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                                    <line x1="9" y1="20" x2="15" y2="20"></line>
+                                    <line x1="12" y1="4" x2="12" y2="20"></line>
+                                </svg>
+                                <span>Text</span>
+                            </button>
+
+                            <!-- Rectangle -->
+                            <button
+                                class="tool-btn"
+                                data-tool="rectangle"
+                                data-tooltip="Rectangle Shape"
+                                aria-label="Rectangle"
+                            >
+                                <svg viewBox="0 0 24 24">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                </svg>
+                                <span>Rectangle</span>
+                            </button>
+
+                            <!-- Ellipse -->
+                            <button
+                                class="tool-btn"
+                                data-tool="ellipse"
+                                data-tooltip="Ellipse / Circle Shape"
+                                aria-label="Ellipse"
+                            >
+                                <svg viewBox="0 0 24 24">
+                                    <ellipse cx="12" cy="12" rx="9" ry="6"></ellipse>
+                                </svg>
+                                <span>Ellipse</span>
+                            </button>
+
+                            <!-- Eraser -->
+                            <button
+                                class="tool-btn"
+                                data-tool="eraser"
+                                id="btnEraserTool"
+                                data-tooltip="Precision Eraser (Click annotation to remove)"
+                                aria-label="Eraser"
+                            >
+                                <svg viewBox="0 0 24 24">
+                                    <path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"></path>
+                                    <path d="M22 21H7"></path>
+                                    <path d="m5 11 9 9"></path>
+                                </svg>
+                                <span>Eraser</span>
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Secondary Actions (Eraser, Undo, Redo, Clear, Save) -->
+                    <!-- Tool Properties: Color & Stroke (dimmed when Eraser active) -->
+                    <div class="tool-properties-section" id="toolPropertiesSection">
+                        <!-- Color Swatches Row -->
+                        <div class="property-group">
+                            <span class="property-label">Color</span>
+                            <div class="colors-list" id="colorsList">
+                                <button
+                                    class="color-swatch active"
+                                    data-color="#e63946"
+                                    style="background-color: #e63946"
+                                    data-tooltip="Crimson"
+                                    aria-label="Crimson color"
+                                ></button>
+                                <button
+                                    class="color-swatch"
+                                    data-color="#3a86ff"
+                                    style="background-color: #3a86ff"
+                                    data-tooltip="Cobalt Blue"
+                                    aria-label="Cobalt Blue color"
+                                ></button>
+                                <button
+                                    class="color-swatch"
+                                    data-color="#2a9d8f"
+                                    style="background-color: #2a9d8f"
+                                    data-tooltip="Emerald"
+                                    aria-label="Emerald color"
+                                ></button>
+                                <button
+                                    class="color-swatch"
+                                    data-color="#f4a261"
+                                    style="background-color: #f4a261"
+                                    data-tooltip="Amber Gold"
+                                    aria-label="Amber Gold color"
+                                ></button>
+                                <button
+                                    class="color-swatch"
+                                    data-color="#9d4edd"
+                                    style="background-color: #9d4edd"
+                                    data-tooltip="Amethyst"
+                                    aria-label="Amethyst color"
+                                ></button>
+                                <button
+                                    class="color-swatch is-white"
+                                    data-color="#ffffff"
+                                    style="background-color: #ffffff"
+                                    data-tooltip="Chalk White"
+                                    aria-label="Chalk White color"
+                                ></button>
+                            </div>
+                        </div>
+
+                        <!-- Stroke Size Row -->
+                        <div class="property-group">
+                            <span class="property-label">Thickness</span>
+                            <div class="stroke-size-selector">
+                                <button
+                                    class="stroke-chip fine"
+                                    data-width="2"
+                                    data-tooltip="Fine (2px)"
+                                    aria-label="Fine 2px"
+                                >
+                                    <span class="dot"></span>
+                                    <span class="stroke-name">Fine</span>
+                                </button>
+                                <button
+                                    class="stroke-chip med active"
+                                    data-width="4"
+                                    data-tooltip="Medium (4px)"
+                                    aria-label="Medium 4px"
+                                >
+                                    <span class="dot"></span>
+                                    <span class="stroke-name">Med</span>
+                                </button>
+                                <button
+                                    class="stroke-chip bold"
+                                    data-width="8"
+                                    data-tooltip="Bold (8px)"
+                                    aria-label="Bold 8px"
+                                >
+                                    <span class="dot"></span>
+                                    <span class="stroke-name">Bold</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Secondary Actions (Undo, Redo, Clear Page) -->
                     <div class="action-buttons-row">
-                        <button
-                            class="action-pill-btn"
-                            id="btnEraserTool"
-                            data-tooltip="Eraser"
-                        >
-                            <svg
-                                style="width: 14px; height: 14px"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                fill="none"
-                            >
-                                <path
-                                    d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"
-                                ></path>
-                                <path d="M22 21H7"></path>
-                                <path d="m5 11 9 9"></path>
-                            </svg>
-                            <span>Eraser</span>
-                        </button>
                         <button
                             class="action-pill-btn"
                             id="btnUndoAnnot"
                             data-tooltip="Undo (Ctrl+Z)"
+                            aria-label="Undo"
                         >
-                            <svg
-                                style="width: 14px; height: 14px"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                fill="none"
-                            >
+                            <svg viewBox="0 0 24 24">
                                 <path d="M3 7v6h6"></path>
-                                <path
-                                    d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"
-                                ></path>
+                                <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"></path>
                             </svg>
                             <span>Undo</span>
                         </button>
                         <button
                             class="action-pill-btn"
-                            id="btnClearPageAnnot"
-                            data-tooltip="Clear Page"
+                            id="btnRedoAnnot"
+                            data-tooltip="Redo (Ctrl+Y)"
+                            aria-label="Redo"
                         >
-                            <svg
-                                style="width: 14px; height: 14px"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                fill="none"
-                            >
+                            <svg viewBox="0 0 24 24">
+                                <path d="M21 7v6h-6"></path>
+                                <path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"></path>
+                            </svg>
+                            <span>Redo</span>
+                        </button>
+                        <button
+                            class="action-pill-btn danger"
+                            id="btnClearPageAnnot"
+                            data-tooltip="Clear Annotations on this Page"
+                            aria-label="Clear Page"
+                        >
+                            <svg viewBox="0 0 24 24">
                                 <polyline points="3 6 5 6 21 6"></polyline>
-                                <path
-                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                                ></path>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                             </svg>
                             <span>Clear</span>
                         </button>
-
                     </div>
                 </aside>
 

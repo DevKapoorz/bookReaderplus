@@ -28,6 +28,8 @@ class AnnotationManager {
         this.undoStack = [];
         this.redoStack = [];
         this.onStatusChange = () => {};
+        this.onToolChange = () => {};
+        this.onHistoryChange = () => {};
 
         this.bindEvents();
     }
@@ -51,14 +53,25 @@ class AnnotationManager {
             this.canvas.classList.add("interactive", `tool-${tool}`);
         }
         this.render();
+        this.onToolChange(this.activeTool);
     }
 
     setColor(color) {
         this.currentColor = color;
+        this.onToolChange(this.activeTool);
     }
 
     setStrokeWidth(w) {
         this.currentStrokeWidth = w;
+    }
+
+    notifyHistoryChange() {
+        if (typeof this.onHistoryChange === "function") {
+            this.onHistoryChange({
+                canUndo: this.undoStack.length > 0,
+                canRedo: this.redoStack.length > 0,
+            });
+        }
     }
 
     // =========================================================================
@@ -296,11 +309,12 @@ class AnnotationManager {
         list.forEach((item) => {
             ctx.save();
             if (item.type === "highlighter") {
-                ctx.globalAlpha = 0.35;
+                ctx.globalAlpha = 0.38;
+                ctx.globalCompositeOperation = "multiply";
                 ctx.lineWidth = item.strokeWidth * (pw / 500) * 3.5;
                 ctx.strokeStyle = item.color;
-                ctx.lineCap = "square";
-                ctx.lineJoin = "miter";
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
                 ctx.beginPath();
                 if (item.points && item.points.length > 0) {
                     ctx.moveTo(
@@ -335,23 +349,47 @@ class AnnotationManager {
                     }
                 }
                 ctx.stroke();
-            } else if (item.type === "rectangle") {
-                ctx.globalAlpha = 0.9;
-                ctx.lineWidth = item.strokeWidth * (pw / 500);
-                ctx.strokeStyle = item.color;
+            } else if (item.type === "rectangle" && item.rect) {
                 const rx = px + item.rect.x * pw;
                 const ry = py + item.rect.y * ph;
                 const rw = item.rect.w * pw;
                 const rh = item.rect.h * ph;
+
+                // Subtle tint fill
+                ctx.globalAlpha = 0.08;
+                ctx.fillStyle = item.color;
+                ctx.fillRect(rx, ry, rw, rh);
+
+                // Outline
+                ctx.globalAlpha = 0.95;
+                ctx.lineWidth = item.strokeWidth * (pw / 500);
+                ctx.strokeStyle = item.color;
                 ctx.strokeRect(rx, ry, rw, rh);
-            } else if (item.type === "ellipse") {
-                ctx.globalAlpha = 0.9;
-                ctx.lineWidth = item.strokeWidth * (pw / 500);
-                ctx.strokeStyle = item.color;
+            } else if (item.type === "ellipse" && item.rect) {
                 const rx = px + item.rect.x * pw;
                 const ry = py + item.rect.y * ph;
                 const rw = item.rect.w * pw;
                 const rh = item.rect.h * ph;
+
+                // Subtle tint fill
+                ctx.globalAlpha = 0.08;
+                ctx.fillStyle = item.color;
+                ctx.beginPath();
+                ctx.ellipse(
+                    rx + rw / 2,
+                    ry + rh / 2,
+                    Math.abs(rw / 2),
+                    Math.abs(rh / 2),
+                    0,
+                    0,
+                    Math.PI * 2,
+                );
+                ctx.fill();
+
+                // Outline
+                ctx.globalAlpha = 0.95;
+                ctx.lineWidth = item.strokeWidth * (pw / 500);
+                ctx.strokeStyle = item.color;
                 ctx.beginPath();
                 ctx.ellipse(
                     rx + rw / 2,
@@ -367,25 +405,67 @@ class AnnotationManager {
                 const tx = px + item.x * pw;
                 const ty = py + item.y * ph;
 
-                ctx.font = `bold ${Math.max(14, 16 * (pw / 500))}px -apple-system, sans-serif`;
-                const textMetrics = ctx.measureText(item.text);
-                const padX = 8;
-                const padY = 5;
-                const bgW = textMetrics.width + padX * 2;
-                const bgH = 24 * (pw / 500);
+                const fontSize = Math.max(12, Math.round(14 * (pw / 500)));
+                const lineHeight = fontSize * 1.35;
+                ctx.font = `600 ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
 
-                // Sticky note background
-                ctx.fillStyle = "rgba(255, 243, 196, 0.92)";
-                ctx.strokeStyle = item.color;
-                ctx.lineWidth = 1.5;
-                ctx.shadowColor = "rgba(0,0,0,0.25)";
-                ctx.shadowBlur = 6;
-                ctx.fillRect(tx, ty - bgH + 4, bgW, bgH);
-                ctx.strokeRect(tx, ty - bgH + 4, bgW, bgH);
-                ctx.shadowBlur = 0;
+                const lines = (item.text || "").split("\n");
+                let maxLineWidth = 0;
+                for (const line of lines) {
+                    const w = ctx.measureText(line).width;
+                    if (w > maxLineWidth) maxLineWidth = w;
+                }
 
-                ctx.fillStyle = "#222";
-                ctx.fillText(item.text, tx + padX, ty - 4);
+                const padX = 9;
+                const padY = 7;
+                const bgW = Math.max(50, maxLineWidth + padX * 2);
+                const bgH = Math.max(22, lines.length * lineHeight + padY * 2);
+                const cornerRadius = 5;
+
+                // Store normalized bounding box for accurate eraser hit testing
+                item._bbox = {
+                    x: item.x,
+                    y: item.y,
+                    w: bgW / pw,
+                    h: bgH / ph,
+                };
+
+                // Drop shadow for sticky note
+                ctx.shadowColor = "rgba(0, 0, 0, 0.25)";
+                ctx.shadowBlur = 8;
+                ctx.shadowOffsetY = 2;
+
+                // Sticky background
+                ctx.fillStyle = "rgba(255, 248, 225, 0.95)";
+                ctx.beginPath();
+                if (typeof ctx.roundRect === "function") {
+                    ctx.roundRect(tx, ty, bgW, bgH, cornerRadius);
+                } else {
+                    ctx.rect(tx, ty, bgW, bgH);
+                }
+                ctx.fill();
+
+                // Reset shadow before border & text
+                ctx.shadowColor = "transparent";
+                ctx.strokeStyle = item.color || "#e63946";
+                ctx.lineWidth = 1.8;
+                ctx.beginPath();
+                if (typeof ctx.roundRect === "function") {
+                    ctx.roundRect(tx, ty, bgW, bgH, cornerRadius);
+                } else {
+                    ctx.rect(tx, ty, bgW, bgH);
+                }
+                ctx.stroke();
+
+                // Draw text lines
+                ctx.fillStyle = "#1e1e24";
+                lines.forEach((line, i) => {
+                    ctx.fillText(
+                        line,
+                        tx + padX,
+                        ty + padY + (i + 1) * lineHeight - (lineHeight * 0.22),
+                    );
+                });
             }
             ctx.restore();
         });
@@ -402,10 +482,12 @@ class AnnotationManager {
 
         ctx.save();
         if (s.type === "highlighter") {
-            ctx.globalAlpha = 0.35;
+            ctx.globalAlpha = 0.38;
+            ctx.globalCompositeOperation = "multiply";
             ctx.lineWidth = s.strokeWidth * (pw / 500) * 3.5;
             ctx.strokeStyle = s.color;
-            ctx.lineCap = "square";
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
             ctx.beginPath();
             ctx.moveTo(px + s.points[0].x * pw, py + s.points[0].y * ph);
             for (let i = 1; i < s.points.length; i++) {
@@ -425,23 +507,42 @@ class AnnotationManager {
             }
             ctx.stroke();
         } else if (s.type === "rectangle" && s.rect) {
-            ctx.globalAlpha = 0.9;
-            ctx.lineWidth = s.strokeWidth * (pw / 500);
-            ctx.strokeStyle = s.color;
-            ctx.strokeRect(
-                px + s.rect.x * pw,
-                py + s.rect.y * ph,
-                s.rect.w * pw,
-                s.rect.h * ph,
-            );
-        } else if (s.type === "ellipse" && s.rect) {
-            ctx.globalAlpha = 0.9;
-            ctx.lineWidth = s.strokeWidth * (pw / 500);
-            ctx.strokeStyle = s.color;
             const rx = px + s.rect.x * pw;
             const ry = py + s.rect.y * ph;
             const rw = s.rect.w * pw;
             const rh = s.rect.h * ph;
+
+            ctx.globalAlpha = 0.08;
+            ctx.fillStyle = s.color;
+            ctx.fillRect(rx, ry, rw, rh);
+
+            ctx.globalAlpha = 0.95;
+            ctx.lineWidth = s.strokeWidth * (pw / 500);
+            ctx.strokeStyle = s.color;
+            ctx.strokeRect(rx, ry, rw, rh);
+        } else if (s.type === "ellipse" && s.rect) {
+            const rx = px + s.rect.x * pw;
+            const ry = py + s.rect.y * ph;
+            const rw = s.rect.w * pw;
+            const rh = s.rect.h * ph;
+
+            ctx.globalAlpha = 0.08;
+            ctx.fillStyle = s.color;
+            ctx.beginPath();
+            ctx.ellipse(
+                rx + rw / 2,
+                ry + rh / 2,
+                Math.abs(rw / 2),
+                Math.abs(rh / 2),
+                0,
+                0,
+                Math.PI * 2,
+            );
+            ctx.fill();
+
+            ctx.globalAlpha = 0.95;
+            ctx.lineWidth = s.strokeWidth * (pw / 500);
+            ctx.strokeStyle = s.color;
             ctx.beginPath();
             ctx.ellipse(
                 rx + rw / 2,
@@ -580,6 +681,7 @@ class AnnotationManager {
             this.undoStack.push({ action: "add", item: stroke });
             this.redoStack = [];
             this.persistCurrentDoc();
+            this.notifyHistoryChange();
         }
 
         this.render();
@@ -591,7 +693,7 @@ class AnnotationManager {
 
         // Find annotation closest to hit point
         let closestIdx = -1;
-        let minDist = 0.06; // Radius threshold
+        let minDist = 0.055; // Radius threshold for strokes
 
         for (let i = list.length - 1; i >= 0; i--) {
             const ann = list[i];
@@ -616,8 +718,22 @@ class AnnotationManager {
                     break;
                 }
             } else if (ann.type === "text") {
+                const bbox = ann._bbox || {
+                    x: ann.x,
+                    y: ann.y,
+                    w: 0.15,
+                    h: 0.06,
+                };
+                const inX =
+                    hit.normX >= bbox.x && hit.normX <= bbox.x + bbox.w;
+                const inY =
+                    hit.normY >= bbox.y && hit.normY <= bbox.y + bbox.h;
+                if (inX && inY) {
+                    closestIdx = i;
+                    break;
+                }
                 const d = Math.hypot(ann.x - hit.normX, ann.y - hit.normY);
-                if (d < 0.08) {
+                if (d < 0.05) {
                     closestIdx = i;
                     break;
                 }
@@ -632,7 +748,9 @@ class AnnotationManager {
                 pageNum: hit.pageNum,
             });
             this.persistCurrentDoc();
+            this.notifyHistoryChange();
             this.render();
+            this.onStatusChange("Annotation removed");
         }
     }
 
@@ -644,14 +762,22 @@ class AnnotationManager {
         const dialog = document.createElement("div");
         dialog.id = "activeTextInputDialog";
         dialog.className = "annotation-text-input-dialog";
-        dialog.style.left = `${Math.min(window.innerWidth - 260, clientX)}px`;
-        dialog.style.top = `${Math.min(window.innerHeight - 150, clientY)}px`;
+
+        // Viewport-safe clamping
+        const posX = Math.max(16, Math.min(window.innerWidth - 310, clientX - 20));
+        const posY = Math.max(16, Math.min(window.innerHeight - 200, clientY - 30));
+        dialog.style.left = `${posX}px`;
+        dialog.style.top = `${posY}px`;
 
         dialog.innerHTML = `
-      <textarea placeholder="Write text note here..." rows="3" autofocus></textarea>
+      <div class="dialog-header">
+        <span class="dialog-title">Add Note</span>
+        <span class="dialog-swatch" style="background:${this.currentColor}; color:${this.currentColor}"></span>
+      </div>
+      <textarea placeholder="Write text note here... (Ctrl+Enter to save)" rows="3" autofocus></textarea>
       <div class="dialog-actions">
-        <button class="cancel-btn">Cancel</button>
-        <button class="save-btn" style="background:${this.currentColor};color:#fff;">Place Note</button>
+        <button type="button" class="cancel-btn">Cancel</button>
+        <button type="button" class="save-btn" style="background:${this.currentColor}; color:#ffffff;">Place Note</button>
       </div>
     `;
 
@@ -659,10 +785,18 @@ class AnnotationManager {
         const textarea = dialog.querySelector("textarea");
         textarea.focus();
 
-        const closeDialog = () => dialog.remove();
+        const closeDialog = () => {
+            document.removeEventListener("pointerdown", handleOutsideClick);
+            dialog.remove();
+        };
 
-        dialog.querySelector(".cancel-btn").onclick = closeDialog;
-        dialog.querySelector(".save-btn").onclick = () => {
+        const handleOutsideClick = (e) => {
+            if (!dialog.contains(e.target)) {
+                closeDialog();
+            }
+        };
+
+        const saveNote = () => {
             const text = textarea.value.trim();
             if (text) {
                 const note = {
@@ -679,10 +813,30 @@ class AnnotationManager {
                 this.undoStack.push({ action: "add", item: note });
                 this.redoStack = [];
                 this.persistCurrentDoc();
+                this.notifyHistoryChange();
                 this.render();
+                this.onStatusChange("Note placed");
             }
             closeDialog();
         };
+
+        dialog.querySelector(".cancel-btn").onclick = closeDialog;
+        dialog.querySelector(".save-btn").onclick = saveNote;
+
+        textarea.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                saveNote();
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                closeDialog();
+            }
+        });
+
+        // Delay attaching outside click to avoid closing on trigger click
+        setTimeout(() => {
+            document.addEventListener("pointerdown", handleOutsideClick);
+        }, 80);
     }
 
     undo() {
@@ -702,6 +856,7 @@ class AnnotationManager {
             this.redoStack.push(op);
         }
         this.persistCurrentDoc();
+        this.notifyHistoryChange();
         this.render();
     }
 
@@ -722,6 +877,7 @@ class AnnotationManager {
             }
         }
         this.persistCurrentDoc();
+        this.notifyHistoryChange();
         this.render();
     }
 
@@ -736,14 +892,23 @@ class AnnotationManager {
             if (spread.right) pagesToClear.push(spread.right);
         }
 
+        let clearedCount = 0;
         pagesToClear.forEach((p) => {
             const list = this.getPageAnnotations(p);
-            list.length = 0;
+            if (list.length > 0) {
+                clearedCount += list.length;
+                list.length = 0;
+            }
         });
 
-        this.persistCurrentDoc();
-        this.render();
-        this.onStatusChange("Page cleared");
+        if (clearedCount > 0) {
+            this.undoStack = [];
+            this.redoStack = [];
+            this.persistCurrentDoc();
+            this.notifyHistoryChange();
+            this.render();
+            this.onStatusChange("Page annotations cleared");
+        }
     }
 }
 
