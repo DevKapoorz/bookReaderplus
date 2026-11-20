@@ -26,6 +26,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const btnToggleSpread = document.getElementById("btnToggleSpread");
     const iconTwoPage = document.getElementById("iconTwoPage");
     const iconOnePage = document.getElementById("iconOnePage");
+    const btnToggleInverser = document.getElementById("btnToggleInverser");
     const btnToggleDarkMode = document.getElementById("btnToggleDarkMode");
     const iconMoon = document.getElementById("iconMoon");
     const iconSun = document.getElementById("iconSun");
@@ -443,6 +444,52 @@ document.addEventListener("DOMContentLoaded", async () => {
         applyViewMode(nextIsTwo, true);
         showToast(nextIsTwo ? "Two-Page Spread View" : "One-Page View");
     });
+
+    // =========================================================================
+    // Inverser (Invert Page Colors using invertLightnessKeepHue)
+    // Saved in localStorage as oneliner inverser:true / false
+    // =========================================================================
+    let isInverted = false;
+    try {
+        isInverted = localStorage.getItem("inverser") === "true";
+    } catch (_) {}
+
+    function applyInverser(inverted, save = true) {
+        isInverted = !!inverted;
+        if (btnToggleInverser) {
+            btnToggleInverser.classList.toggle("active", isInverted);
+            btnToggleInverser.setAttribute(
+                "aria-label",
+                isInverted ? "Invert Colors (Active)" : "Invert Colors",
+            );
+        }
+        if (docProvider && typeof docProvider.setInverted === "function") {
+            docProvider.setInverted(isInverted);
+        }
+        if (flipbook) {
+            flipbook.render();
+        }
+        if (annotationManager) {
+            annotationManager.render();
+        }
+
+        if (save) {
+            try {
+                localStorage.setItem("inverser", isInverted ? "true" : "false");
+            } catch (_) {}
+        }
+    }
+
+    // Apply saved inverser state on startup
+    applyInverser(isInverted, false);
+
+    if (btnToggleInverser) {
+        btnToggleInverser.addEventListener("click", () => {
+            const nextInverted = !isInverted;
+            applyInverser(nextInverted, true);
+            showToast(nextInverted ? "Inverted Colors Active" : "Original Colors Restored");
+        });
+    }
 
     // =========================================================================
     // Theme Management (Dark Mode / Light Mode with LocalStorage persistence)
@@ -913,6 +960,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         } else if (e.key === "d" || e.key === "D") {
             btnToggleDarkMode.click();
+        } else if (e.key === "i" || e.key === "I") {
+            if (btnToggleInverser) btnToggleInverser.click();
         } else if (e.key === "v" || e.key === "V") {
             btnToggleSpread.click();
         } else if (e.key === "+" || e.key === "=") {

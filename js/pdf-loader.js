@@ -22,11 +22,33 @@ class DocumentProvider {
         this.activePage = 1;
         this.defaultAspect = 1.414;
         this.getProtectedPageNumbers = () => new Set();
+        this.isInverted = false;
+        try {
+            this.isInverted = localStorage.getItem("inverser") === "true";
+        } catch (_) {}
     }
 
     async init() {
         // Starts in clean onboarding state; ready to load user PDF
         return Promise.resolve();
+    }
+
+    /**
+     * Set inversion state and toggle lightness on all currently cached page canvases.
+     */
+    setInverted(inverted) {
+        this.isInverted = !!inverted;
+        if (typeof invertLightnessKeepHue === "function") {
+            for (const canvas of this.pageCanvases.values()) {
+                if (canvas && canvas.width > 0 && canvas.height > 0) {
+                    if (Boolean(canvas._isInverted) !== this.isInverted) {
+                        const ctx = canvas.getContext("2d");
+                        invertLightnessKeepHue(ctx, canvas.width, canvas.height);
+                        canvas._isInverted = this.isInverted;
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -301,6 +323,11 @@ class DocumentProvider {
                 };
 
                 await page.render(renderContext).promise;
+
+                if (this.isInverted && !canvas._isInverted && typeof invertLightnessKeepHue === "function") {
+                    invertLightnessKeepHue(ctx, canvas.width, canvas.height);
+                    canvas._isInverted = true;
+                }
 
                 let protectedSet = new Set();
                 if (typeof this.getProtectedPageNumbers === "function") {

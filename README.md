@@ -35,6 +35,7 @@ An exceptionally beautiful, tactile, and simple canvas-based flipbook web applic
     - Theme preference (Dark Reading Mode / Light Archival Mode) is saved and restored automatically on return.
     - Zoom scale is saved and restored automatically across visits.
     - Page view mode (Two-Page Spread View / Single Page View) is saved and restored automatically on return.
+    - Page color inversion state (`inverser: true`) is saved and restored automatically on return.
 - **Onboarding Drop Area**:
     - Clean landing page with an interactive drag-and-drop zone and file picker.
     - Fast 100% client-side PDF rendering with PDF.js.
@@ -48,6 +49,7 @@ An exceptionally beautiful, tactile, and simple canvas-based flipbook web applic
 | `→` / `Space` / `Page Down`      | Next Page                                     |
 | `←` / `Page Up`                  | Previous Page                                 |
 | `D`                              | Toggle Dark Mode / Light Mode                 |
+| `I`                              | Toggle Invert Page Colors (Inverser)          |
 | `V`                              | Toggle 1-Page / 2-Page View                   |
 | `Ctrl + Z`                       | Undo Annotation                               |
 | `Ctrl + Y` or `Ctrl + Shift + Z` | Redo Annotation                               |

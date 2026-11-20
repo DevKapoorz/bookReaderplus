@@ -114,6 +114,19 @@
                         </svg>
                     </button>
 
+                    <!-- Toggle Invert Colors (Inverser) -->
+                    <button
+                        class="btn-icon"
+                        id="btnToggleInverser"
+                        data-tooltip="Invert Page Colors (Keep Hue)"
+                        aria-label="Invert Colors"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor"></path>
+                        </svg>
+                    </button>
+
                     <!-- Toggle Dark Mode (Default: Dark Mode) -->
                     <button
                         class="btn-icon active"
@@ -626,6 +639,7 @@
         </div>
 
         <!-- App Scripts -->
+        <script src="js/inverser.js"></script>
         <script src="js/pdf-loader.js"></script>
         <script src="js/flipbook.js"></script>
         <script src="js/annotations.js"></script>
