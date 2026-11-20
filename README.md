@@ -32,6 +32,8 @@ An exceptionally beautiful, tactile, and simple canvas-based flipbook web applic
 - **LocalStorage Persistence**:
     - Annotations are automatically saved to `localStorage` keyed by document ID.
     - Reading progress is remembered: reopening a PDF resumes automatically at your last read page.
+    - Theme preference (Dark Reading Mode / Light Archival Mode) is saved and restored automatically on return.
+    - Zoom scale is saved and restored automatically across visits.
 - **Onboarding Drop Area**:
     - Clean landing page with an interactive drag-and-drop zone and file picker.
     - Fast 100% client-side PDF rendering with PDF.js.
@@ -48,5 +50,7 @@ An exceptionally beautiful, tactile, and simple canvas-based flipbook web applic
 | `V`                              | Toggle 1-Page / 2-Page View                   |
 | `Ctrl + Z`                       | Undo Annotation                               |
 | `Ctrl + Y` or `Ctrl + Shift + Z` | Redo Annotation                               |
+| `+` / `-`                        | Zoom In / Out                                 |
+| `Ctrl + 0`                       | Reset Zoom to 100%                            |
 | `Ctrl + Wheel` / `Pinch`         | Zoom In / Out                                 |
 | `Esc`                            | Return to Reading Mode (Deselect active tool) |

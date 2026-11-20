@@ -18,11 +18,18 @@ class FlipbookEngine {
         this.currentPage = 1; // 1-based page index. Page 1 is Cover (single)
 
         // Zoom & Pan state
-        this.zoom = 1.0;
-        this.panX = 0;
-        this.panY = 0;
         this.minZoom = 0.8;
         this.maxZoom = 3.0;
+        const initialZoom =
+            typeof options.initialZoom === "number" && !isNaN(options.initialZoom)
+                ? options.initialZoom
+                : 1.0;
+        this.zoom = Math.max(this.minZoom, Math.min(this.maxZoom, initialZoom));
+        if (Math.abs(this.zoom - 1.0) < 0.05) {
+            this.zoom = 1.0;
+        }
+        this.panX = 0;
+        this.panY = 0;
 
         // Dimensions & Layout
         this.stageWidth = 0;

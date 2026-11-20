@@ -74,9 +74,22 @@ document.addEventListener("DOMContentLoaded", async () => {
     const docProvider = new DocumentProvider();
     await docProvider.init();
 
+    // Load saved zoom from localStorage (default: 1.0, min: 0.8, max: 3.0)
+    let savedZoom = 1.0;
+    try {
+        const rawZoom = localStorage.getItem("flipbook_zoom");
+        if (rawZoom !== null) {
+            const parsed = parseFloat(rawZoom);
+            if (!isNaN(parsed) && parsed >= 0.8 && parsed <= 3.0) {
+                savedZoom = parsed;
+            }
+        }
+    } catch (_) {}
+
     // 2. Initialize Flipbook Engine (Default: Two-Page View, Page 1 as Cover Page)
     const flipbook = new FlipbookEngine(bookCanvas, docProvider, {
         isTwoPage: true, // Default per requirement
+        initialZoom: savedZoom,
         onPageChange: (info) => {
             updatePageControls(info);
             annotationManager.render();
@@ -101,13 +114,22 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         },
         onZoomChange: (pct) => {
-            zoomIndicatorPill.textContent = `${pct}%`;
+            if (zoomIndicatorPill) {
+                zoomIndicatorPill.textContent = `${pct}%`;
+            }
             annotationManager.render();
+            try {
+                localStorage.setItem("flipbook_zoom", flipbook.zoom);
+            } catch (_) {}
         },
         onPanChange: () => {
             annotationManager.render();
         },
     });
+
+    if (zoomIndicatorPill) {
+        zoomIndicatorPill.textContent = `${Math.round(flipbook.zoom * 100)}%`;
+    }
 
     // 3. Initialize Annotation Layer
     const annotationManager = new AnnotationManager(annotationCanvas, flipbook);
@@ -382,28 +404,63 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     // =========================================================================
-    // Dark Mode Toggle (Default: Dark Mode)
+    // Theme Management (Dark Mode / Light Mode with LocalStorage persistence)
     // =========================================================================
-    btnToggleDarkMode.addEventListener("click", () => {
-        document.body.classList.toggle("light-mode");
-        document.body.classList.toggle("dark-mode");
-        const isDark = document.body.classList.contains("dark-mode");
-        btnToggleDarkMode.classList.toggle("active", isDark);
-        iconMoon.style.display = isDark ? "block" : "none";
-        iconSun.style.display = isDark ? "none" : "block";
+    function applyTheme(theme, save = true) {
+        const isDark = theme !== "light";
+        document.body.classList.toggle("light-mode", !isDark);
+        document.body.classList.toggle("dark-mode", isDark);
+        if (btnToggleDarkMode) {
+            btnToggleDarkMode.classList.toggle("active", isDark);
+            btnToggleDarkMode.setAttribute(
+                "aria-label",
+                isDark ? "Dark Mode" : "Light Mode",
+            );
+        }
+        if (iconMoon) iconMoon.style.display = isDark ? "block" : "none";
+        if (iconSun) iconSun.style.display = isDark ? "none" : "block";
+
+        if (save) {
+            try {
+                localStorage.setItem("flipbook_theme", isDark ? "dark" : "light");
+            } catch (_) {}
+        }
 
         // If default book, re-render demo pages for new theme
         if (!docProvider.isPdf) {
-            docProvider.generateDefaultBook().then(() => {
+            if (typeof docProvider.generateDefaultBook === "function") {
+                docProvider.generateDefaultBook().then(() => {
+                    flipbook.render();
+                    annotationManager.render();
+                });
+            } else {
                 flipbook.render();
                 annotationManager.render();
-            });
+            }
         } else {
             flipbook.render();
             annotationManager.render();
         }
+    }
 
-        showToast(isDark ? "Dark Reading Mode" : "Light Archival Mode");
+    // Restore saved theme from localStorage on startup
+    try {
+        const savedTheme = localStorage.getItem("flipbook_theme");
+        if (savedTheme) {
+            applyTheme(savedTheme, false);
+        } else {
+            const isDark = document.body.classList.contains("dark-mode");
+            applyTheme(isDark ? "dark" : "light", false);
+        }
+    } catch (_) {
+        applyTheme("dark", false);
+    }
+
+    btnToggleDarkMode.addEventListener("click", () => {
+        const currentlyDark = document.body.classList.contains("dark-mode");
+        const nextTheme = currentlyDark ? "light" : "dark";
+        applyTheme(nextTheme, true);
+        showToast(nextTheme === "dark" ? "Dark Reading Mode" : "Light Archival Mode");
     });
 
     // =========================================================================
@@ -817,6 +874,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             btnToggleDarkMode.click();
         } else if (e.key === "v" || e.key === "V") {
             btnToggleSpread.click();
+        } else if (e.key === "+" || e.key === "=") {
+            e.preventDefault();
+            flipbook.setZoom(flipbook.zoom * 1.15);
+        } else if (e.key === "-" || e.key === "_") {
+            e.preventDefault();
+            flipbook.setZoom(flipbook.zoom * 0.85);
+        } else if (e.key === "0" && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            flipbook.resetZoom();
         } else if (e.key === "z" && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
             if (e.shiftKey) {
