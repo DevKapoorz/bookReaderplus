@@ -172,7 +172,7 @@ class FlipbookEngine {
         const aspect =
             samplePage && samplePage.width > 0
                 ? samplePage.height / samplePage.width
-                : 1.414;
+                : (this.docProvider && this.docProvider.defaultAspect) || 1.414;
 
         // Book reading area scaled to fill reading canvas with subtle inner margin
         const innerMargin = 16;
@@ -323,6 +323,34 @@ class FlipbookEngine {
         }
         const spread = this.getSpreadPages();
         return spread.left === pageNum || spread.right === pageNum;
+    }
+
+    getVisiblePages() {
+        if (!this.docProvider || this.docProvider.pageCount === 0) return [];
+        const pages = [];
+        if (!this.isTwoPage || this.currentPage === 1) {
+            pages.push(this.currentPage);
+        } else {
+            const spread = this.getSpreadPages();
+            if (spread.left) pages.push(spread.left);
+            if (spread.right) pages.push(spread.right);
+        }
+
+        // If currently flipping or dragging, also protect outgoing / incoming pages
+        if (this.isFlipping || this.isDragging) {
+            if (this.flipDirection > 0 || this.dragSide === "right") {
+                const spread = this.getSpreadPages();
+                const currentRight = spread.right || this.currentPage;
+                if (currentRight + 1 <= this.docProvider.pageCount) pages.push(currentRight + 1);
+                if (currentRight + 2 <= this.docProvider.pageCount) pages.push(currentRight + 2);
+            } else {
+                const spread = this.getSpreadPages();
+                const currentLeft = spread.left || this.currentPage;
+                if (currentLeft - 1 >= 1) pages.push(currentLeft - 1);
+                if (currentLeft - 2 >= 1) pages.push(currentLeft - 2);
+            }
+        }
+        return pages;
     }
 
     canGoNext() {

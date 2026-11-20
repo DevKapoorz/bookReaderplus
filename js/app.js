@@ -104,6 +104,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         onPageChange: (info) => {
             updatePageControls(info);
             annotationManager.render();
+            if (docProvider && typeof docProvider.preloadAround === "function" && info.current > 0) {
+                docProvider.preloadAround(info.current, info.isTwoPage);
+            }
             if (docProvider.currentDocId && info.current > 0) {
                 localStorage.setItem(
                     `flipbook_last_page_${docProvider.currentDocId}`,
@@ -141,6 +144,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (zoomIndicatorPill) {
         zoomIndicatorPill.textContent = `${Math.round(flipbook.zoom * 100)}%`;
     }
+
+    // Connect LRU protection: never evict pages that are currently visible in the flipbook
+    docProvider.getProtectedPageNumbers = () => {
+        return new Set(flipbook.getVisiblePages());
+    };
 
     // 3. Initialize Annotation Layer
     const annotationManager = new AnnotationManager(annotationCanvas, flipbook);
