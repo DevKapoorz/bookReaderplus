@@ -65,6 +65,7 @@ class FlipbookEngine {
         this.onPageChange = options.onPageChange || (() => {});
         this.onZoomChange = options.onZoomChange || (() => {});
         this.onPanChange = options.onPanChange || (() => {});
+        this.onRender = options.onRender || (() => {});
 
         // Bind Event Handlers
         this.bindEvents();
@@ -551,6 +552,10 @@ class FlipbookEngine {
 
         ctx.restore();
         ctx.restore();
+
+        if (typeof this.onRender === "function") {
+            this.onRender();
+        }
     }
 
     renderStaticBook(ctx) {

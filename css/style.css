@@ -1705,3 +1705,225 @@ body.has-book .extreme-turn-btn {
     pointer-events: none;
     opacity: 0.85;
 }
+
+/* ==========================================================================
+   Selectable Text Layer & Link Layer Overlay
+   ========================================================================== */
+
+.page-text-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.page-text-container {
+    position: absolute;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.pdf-text-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    line-height: 1;
+    overflow: hidden;
+    user-select: text;
+    -webkit-user-select: text;
+    pointer-events: auto;
+}
+
+.pdf-text-layer span {
+    position: absolute;
+    color: transparent;
+    cursor: text;
+    white-space: pre;
+    transform-origin: 0% 0%;
+}
+
+.pdf-text-layer span::selection {
+    background: rgba(196, 155, 99, 0.42);
+    color: transparent;
+}
+
+body.light-mode .pdf-text-layer span::selection {
+    background: rgba(157, 109, 51, 0.35);
+}
+
+/* Interactive PDF Links Layer */
+.pdf-link-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.pdf-link {
+    position: absolute;
+    pointer-events: auto;
+    cursor: pointer;
+    background: rgba(59, 130, 246, 0.05);
+    border-bottom: 1px dashed rgba(59, 130, 246, 0.4);
+    border-radius: 2px;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pdf-link:hover {
+    background: rgba(59, 130, 246, 0.22);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.85);
+}
+
+.pdf-link[data-page-target]:hover::after {
+    content: "Jump to p. " attr(data-page-target);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+    background: var(--bg-glass-strong);
+    color: var(--text-accent);
+    padding: 3px 8px;
+    font-size: 11px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    white-space: nowrap;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-glass-hover);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+    z-index: 100;
+}
+
+/* Search Highlights */
+.search-highlight {
+    background: rgba(255, 215, 0, 0.45) !important;
+    color: rgba(0, 0, 0, 0.85) !important;
+    border-radius: 2px;
+}
+
+.search-highlight-active {
+    background: rgba(255, 140, 0, 0.88) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 10px rgba(255, 140, 0, 0.95);
+}
+
+/* Disable text selection and link hover when sketching with annotation tools */
+body.annotating .page-text-overlay,
+body.annotating .page-text-container,
+body.annotating .pdf-text-layer,
+body.annotating .pdf-link {
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
+/* ==========================================================================
+   Floating Book Search Bar
+   ========================================================================== */
+
+.search-floating-bar {
+    position: absolute;
+    top: 64px;
+    right: 28px;
+    z-index: 120;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--bg-glass-strong);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border-glass-hover);
+    border-radius: var(--radius-full);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 1px rgba(255, 255, 255, 0.15);
+    animation: searchBarSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes searchBarSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.search-icon-badge {
+    color: var(--text-accent);
+    margin-left: 4px;
+    flex-shrink: 0;
+}
+
+.search-input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    font-size: 0.88rem;
+    width: 170px;
+    padding: 4px 6px;
+}
+
+.search-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.search-match-badge {
+    font-size: 0.75rem;
+    font-family: var(--font-sans);
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 7px;
+    border-radius: var(--radius-full);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    user-select: none;
+}
+
+body.light-mode .search-match-badge {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.search-divider {
+    width: 1px;
+    height: 18px;
+    background: var(--border-glass);
+    margin: 0 2px;
+}
+
+.search-btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-full);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.search-btn-icon:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    border-color: var(--border-glass-hover);
+}
+
+body.light-mode .search-btn-icon:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.search-btn-icon.close:hover {
+    color: #e63946;
+}
+

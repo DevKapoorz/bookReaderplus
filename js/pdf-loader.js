@@ -361,6 +361,79 @@ class DocumentProvider {
         this.renderingPromises.set(pageNum, renderPromise);
         return renderPromise;
     }
+
+    /**
+     * Resolve PDF destination (named or ref) to 1-based page number.
+     */
+    async resolveDestination(dest) {
+        if (!dest || !this.pdfDoc) return null;
+        try {
+            let targetDest = dest;
+            if (typeof dest === "string") {
+                targetDest = await this.pdfDoc.getDestination(dest);
+            }
+            if (Array.isArray(targetDest) && targetDest.length > 0) {
+                const pageRef = targetDest[0];
+                if (typeof pageRef === "number") {
+                    return pageRef + 1; // 0-based to 1-based
+                }
+                if (pageRef && typeof pageRef === "object") {
+                    const pageIndex = await this.pdfDoc.getPageIndex(pageRef);
+                    if (typeof pageIndex === "number" && pageIndex >= 0) {
+                        return pageIndex + 1;
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn("Failed to resolve destination:", e);
+        }
+        return null;
+    }
+
+    /**
+     * Get extracted text content for a given page.
+     */
+    async getPageTextContent(pageNum) {
+        if (!this.pdfDoc || pageNum < 1 || pageNum > this.pageCount) return null;
+        try {
+            const page = await this.pdfDoc.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            if (typeof page.cleanup === "function") {
+                page.cleanup();
+            }
+            return textContent;
+        } catch (e) {
+            console.warn(`Failed to get text for page ${pageNum}:`, e);
+            return null;
+        }
+    }
+
+    /**
+     * Search all pages of the document for a query string.
+     */
+    async searchAllPages(query) {
+        if (!this.pdfDoc || !query || query.trim().length === 0) return [];
+        const q = query.trim().toLowerCase();
+        const matches = [];
+
+        for (let p = 1; p <= this.pageCount; p++) {
+            const textContent = await this.getPageTextContent(p);
+            if (!textContent || !textContent.items) continue;
+
+            const fullText = textContent.items.map((it) => it.str).join(" ");
+            const lower = fullText.toLowerCase();
+            let idx = 0;
+            while ((idx = lower.indexOf(q, idx)) !== -1) {
+                matches.push({
+                    pageNum: p,
+                    index: idx,
+                    query: q,
+                });
+                idx += q.length;
+            }
+        }
+        return matches;
+    }
 }
 
 window.DocumentProvider = DocumentProvider;

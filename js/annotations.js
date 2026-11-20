@@ -37,6 +37,7 @@ class AnnotationManager {
     setTool(tool) {
         this.activeTool = tool;
         window.isAnnotationActive = !!tool;
+        document.body.classList.toggle("annotating", !!tool);
 
         // Reset any existing tool cursor classes
         this.canvas.classList.remove(

@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const btnOpenPdf = document.getElementById("btnOpenPdf");
     const pdfFileInput = document.getElementById("pdfFileInput");
+    const btnSearch = document.getElementById("btnSearch");
     const btnToggleSpread = document.getElementById("btnToggleSpread");
     const iconTwoPage = document.getElementById("iconTwoPage");
     const iconOnePage = document.getElementById("iconOnePage");
@@ -155,6 +156,28 @@ document.addEventListener("DOMContentLoaded", async () => {
     const annotationManager = new AnnotationManager(annotationCanvas, flipbook);
     window.annotationManager = annotationManager;
 
+    // 4. Initialize Text Selection & PDF Link Overlay Layer
+    const pageTextOverlay = document.getElementById("pageTextOverlay");
+    const textLayerManager = new TextLayerManager(
+        pageTextOverlay,
+        flipbook,
+        docProvider,
+    );
+    window.textLayerManager = textLayerManager;
+
+    // 5. Initialize In-Book Search Manager
+    const searchManager = new SearchManager(
+        textLayerManager,
+        flipbook,
+        docProvider,
+    );
+    window.searchManager = searchManager;
+
+    // Connect flipbook engine render hook to keep text layer synchronized
+    flipbook.onRender = () => {
+        textLayerManager.update();
+    };
+
     // Re-render automatically whenever any visible page finishes rendering
     docProvider.onPageRendered = (pageNum) => {
         if (
@@ -164,6 +187,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         ) {
             flipbook.render();
             annotationManager.render();
+            textLayerManager.update();
         }
     };
 
@@ -177,9 +201,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (topNavbar) topNavbar.classList.remove("hud-hidden");
             if (bottomReadingBar) bottomReadingBar.classList.remove("hud-hidden");
             scheduleHudHide();
+            textLayerManager.update();
         } else {
             document.body.classList.remove("has-book");
             bookTitleDisplay.textContent = "Flipbook Reader";
+            textLayerManager.clear();
+            if (searchManager) searchManager.close();
         }
     }
 
@@ -488,6 +515,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             const nextInverted = !isInverted;
             applyInverser(nextInverted, true);
             showToast(nextInverted ? "Inverted Colors Active" : "Original Colors Restored");
+        });
+    }
+
+    if (btnSearch) {
+        btnSearch.addEventListener("click", () => {
+            searchManager.toggle();
         });
     }
 
@@ -891,10 +924,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             annotationManager.loadFromLocalStorage(info.docId);
 
             // Transition from onboarding to active book reader smoothly
+            textLayerManager.clear();
             setAppReadingState(true);
             flipbook.resize();
             updatePageControls(flipbook.getPageStatusInfo());
             annotationManager.render();
+            textLayerManager.update();
 
             // Save recent document record in localStorage
             localStorage.setItem(
@@ -948,6 +983,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
             e.preventDefault();
             flipbook.turnPrev();
+        } else if ((e.key === "f" || e.key === "F") && (e.ctrlKey || e.metaKey)) {
+            e.preventDefault();
+            searchManager.toggle();
         } else if (e.key === "ArrowUp") {
             if (flipbook.zoom > 1.05) {
                 e.preventDefault();
@@ -984,8 +1022,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             e.preventDefault();
             annotationManager.redo();
         } else if (e.key === "Escape") {
-            annotationManager.setTool(null);
-            fabContainer.classList.remove("is-open");
+            if (searchManager && searchManager.isOpen) {
+                searchManager.close();
+            } else {
+                annotationManager.setTool(null);
+                fabContainer.classList.remove("is-open");
+            }
         }
     });
 

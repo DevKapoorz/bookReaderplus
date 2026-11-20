@@ -80,6 +80,19 @@
                         </svg>
                     </button>
 
+                    <!-- Search Book button -->
+                    <button
+                        class="btn-icon"
+                        id="btnSearch"
+                        data-tooltip="Search Book (Ctrl+F)"
+                        aria-label="Search Book"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </button>
+
                     <!-- Toggle One Page / Two Page View (Default: Two Page) -->
                     <button
                         class="btn-icon active"
@@ -227,6 +240,55 @@
                 </div>
             </header>
 
+            <!-- Floating Book Search Bar -->
+            <div class="search-floating-bar" id="searchFloatingBar" style="display: none;">
+                <svg viewBox="0 0 24 24" class="search-icon-badge" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <input
+                    type="text"
+                    id="searchInput"
+                    class="search-input"
+                    placeholder="Find in book..."
+                    autocomplete="off"
+                    spellcheck="false"
+                />
+                <span class="search-match-badge" id="searchMatchBadge">0 of 0</span>
+                <div class="search-divider"></div>
+                <button
+                    class="search-btn-icon"
+                    id="btnSearchPrev"
+                    data-tooltip="Previous Match (Shift+Enter)"
+                    aria-label="Previous Match"
+                >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="18 15 12 9 6 15"></polyline>
+                    </svg>
+                </button>
+                <button
+                    class="search-btn-icon"
+                    id="btnSearchNext"
+                    data-tooltip="Next Match (Enter)"
+                    aria-label="Next Match"
+                >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <button
+                    class="search-btn-icon close"
+                    id="btnSearchClose"
+                    data-tooltip="Close Search (Esc)"
+                    aria-label="Close Search"
+                >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
             <!-- Center Book Viewport -->
             <main class="book-viewport" id="bookViewport">
                 <!-- Onboarding & PDF Drop Area (Active when no book is loaded) -->
@@ -283,6 +345,8 @@
                 <div class="book-canvas-stage" id="bookCanvasStage">
                     <!-- Main canvas for book rendering, spine shadow, and page peeling animation -->
                     <canvas id="bookCanvas"></canvas>
+                    <!-- Transparent selectable text & interactive links layer -->
+                    <div class="page-text-overlay" id="pageTextOverlay"></div>
                     <!-- Overlay canvas for vector annotations & drawing tools -->
                     <canvas id="annotationCanvas"></canvas>
 
@@ -643,6 +707,7 @@
         <script src="js/pdf-loader.js"></script>
         <script src="js/flipbook.js"></script>
         <script src="js/annotations.js"></script>
+        <script src="js/text-layer.js"></script>
         <script src="js/app.js"></script>
     </body>
 </html>
