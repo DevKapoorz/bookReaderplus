@@ -34,6 +34,7 @@ An exceptionally beautiful, tactile, and simple canvas-based flipbook web applic
     - Reading progress is remembered: reopening a PDF resumes automatically at your last read page.
     - Theme preference (Dark Reading Mode / Light Archival Mode) is saved and restored automatically on return.
     - Zoom scale is saved and restored automatically across visits.
+    - Page view mode (Two-Page Spread View / Single Page View) is saved and restored automatically on return.
 - **Onboarding Drop Area**:
     - Clean landing page with an interactive drag-and-drop zone and file picker.
     - Fast 100% client-side PDF rendering with PDF.js.

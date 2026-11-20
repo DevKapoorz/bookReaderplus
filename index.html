@@ -27,7 +27,7 @@
         <link rel="stylesheet" href="css/style.css" />
     </head>
     <body class="dark-mode" data-view-mode="two-page">
-        <!-- Immediately apply saved theme from localStorage to avoid theme flash -->
+        <!-- Immediately apply saved theme and view mode from localStorage to avoid visual flash -->
         <script>
             (function () {
                 try {
@@ -35,6 +35,10 @@
                     if (savedTheme === "light") {
                         document.body.classList.remove("dark-mode");
                         document.body.classList.add("light-mode");
+                    }
+                    const savedViewMode = localStorage.getItem("flipbook_view_mode");
+                    if (savedViewMode === "one-page" || savedViewMode === "single") {
+                        document.body.setAttribute("data-view-mode", "one-page");
                     }
                 } catch (_) {}
             })();

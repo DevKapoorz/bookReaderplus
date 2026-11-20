@@ -86,9 +86,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     } catch (_) {}
 
+    // Load saved view mode from localStorage (default: true for two-page spread)
+    let savedIsTwoPage = true;
+    try {
+        const rawViewMode = localStorage.getItem("flipbook_view_mode");
+        if (rawViewMode === "one-page" || rawViewMode === "single") {
+            savedIsTwoPage = false;
+        } else if (rawViewMode === "two-page" || rawViewMode === "double") {
+            savedIsTwoPage = true;
+        }
+    } catch (_) {}
+
     // 2. Initialize Flipbook Engine (Default: Two-Page View, Page 1 as Cover Page)
     const flipbook = new FlipbookEngine(bookCanvas, docProvider, {
-        isTwoPage: true, // Default per requirement
+        isTwoPage: savedIsTwoPage, // Restored or default per requirement
         initialZoom: savedZoom,
         onPageChange: (info) => {
             updatePageControls(info);
@@ -386,21 +397,43 @@ document.addEventListener("DOMContentLoaded", async () => {
     pageSlider.addEventListener("mouseleave", () => hideSliderBubble(500));
 
     // =========================================================================
-    // View Mode Toggle (1-Page vs 2-Page View)
+    // View Mode Toggle (1-Page vs 2-Page View with LocalStorage persistence)
     // Default is Two-Page View, first page is Cover
     // =========================================================================
-    btnToggleSpread.addEventListener("click", () => {
-        flipbook.toggleViewMode();
-        const isTwo = flipbook.isTwoPage;
+    function applyViewMode(isTwo, save = true) {
+        flipbook.setViewMode(isTwo);
         document.body.setAttribute(
             "data-view-mode",
             isTwo ? "two-page" : "one-page",
         );
-        btnToggleSpread.classList.toggle("active", isTwo);
-        iconTwoPage.style.display = isTwo ? "block" : "none";
-        iconOnePage.style.display = isTwo ? "none" : "block";
-        annotationManager.render();
-        showToast(isTwo ? "Two-Page Spread View" : "One-Page View");
+        if (btnToggleSpread) {
+            btnToggleSpread.classList.toggle("active", isTwo);
+            btnToggleSpread.setAttribute(
+                "aria-label",
+                isTwo ? "Two-Page Spread View" : "Single Page View",
+            );
+        }
+        if (iconTwoPage) iconTwoPage.style.display = isTwo ? "block" : "none";
+        if (iconOnePage) iconOnePage.style.display = isTwo ? "none" : "block";
+        if (annotationManager) annotationManager.render();
+
+        if (save) {
+            try {
+                localStorage.setItem(
+                    "flipbook_view_mode",
+                    isTwo ? "two-page" : "one-page",
+                );
+            } catch (_) {}
+        }
+    }
+
+    // Apply saved view mode on startup
+    applyViewMode(savedIsTwoPage, false);
+
+    btnToggleSpread.addEventListener("click", () => {
+        const nextIsTwo = !flipbook.isTwoPage;
+        applyViewMode(nextIsTwo, true);
+        showToast(nextIsTwo ? "Two-Page Spread View" : "One-Page View");
     });
 
     // =========================================================================

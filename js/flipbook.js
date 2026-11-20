@@ -377,6 +377,13 @@ class FlipbookEngine {
         this.onPageChange(this.getPageStatusInfo());
     }
 
+    setViewMode(isTwoPage) {
+        if (this.isTwoPage === !!isTwoPage) return;
+        this.isTwoPage = !!isTwoPage;
+        this.resize();
+        this.onPageChange(this.getPageStatusInfo());
+    }
+
     getPageStatusInfo() {
         const total = this.docProvider ? this.docProvider.pageCount : 0;
         if (total === 0) {
