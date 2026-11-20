@@ -52,6 +52,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const btnUndoAnnot = document.getElementById("btnUndoAnnot");
     const btnRedoAnnot = document.getElementById("btnRedoAnnot");
     const btnClearPageAnnot = document.getElementById("btnClearPageAnnot");
+    const btnExportAnnotatedPdf = document.getElementById("btnExportAnnotatedPdf");
 
     const onboardingView = document.getElementById("onboardingView");
     const onboardingCard = document.getElementById("onboardingCard");
@@ -200,6 +201,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             document.body.classList.add("has-book");
             if (topNavbar) topNavbar.classList.remove("hud-hidden");
             if (bottomReadingBar) bottomReadingBar.classList.remove("hud-hidden");
+            if (fabContainer) fabContainer.classList.remove("hud-hidden");
+            if (btnTurnPrevExtreme) btnTurnPrevExtreme.classList.remove("hud-hidden");
+            if (btnTurnNextExtreme) btnTurnNextExtreme.classList.remove("hud-hidden");
             scheduleHudHide();
             textLayerManager.update();
         } else {
@@ -773,6 +777,49 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     });
 
+    // Export Annotated PDF Handler
+    if (btnExportAnnotatedPdf) {
+        btnExportAnnotatedPdf.addEventListener("click", async () => {
+            const originalHtml = btnExportAnnotatedPdf.innerHTML;
+            try {
+                btnExportAnnotatedPdf.disabled = true;
+                const result = await annotationManager.exportAnnotatedPdf((pct, statusText) => {
+                    btnExportAnnotatedPdf.innerHTML = `
+                        <svg class="spin-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+                            <path d="M12 2a10 10 0 0 1 10 10"></path>
+                        </svg>
+                        <span>${statusText || `Exporting (${pct}%)...`}</span>
+                    `;
+                });
+
+                // Trigger browser file download
+                const blob = new Blob([result.bytes], { type: "application/pdf" });
+                const blobUrl = URL.createObjectURL(blob);
+                const downloadLink = document.createElement("a");
+                downloadLink.href = blobUrl;
+                downloadLink.download = result.fileName;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                setTimeout(() => {
+                    if (downloadLink.parentNode) {
+                        downloadLink.parentNode.removeChild(downloadLink);
+                    }
+                    URL.revokeObjectURL(blobUrl);
+                }, 2000);
+
+                showToast(`Exported "${result.fileName}" successfully!`, 3200);
+            } catch (err) {
+                console.error("Export PDF error:", err);
+                alert("Failed to export annotated PDF: " + err.message);
+                showToast("Export failed: " + err.message, 3000);
+            } finally {
+                btnExportAnnotatedPdf.disabled = false;
+                btnExportAnnotatedPdf.innerHTML = originalHtml;
+            }
+        });
+    }
+
 
 
     // =========================================================================
@@ -1050,6 +1097,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (!isTabActive || !document.body.classList.contains("has-book")) return;
         if (topNavbar) topNavbar.classList.remove("hud-hidden");
         if (bottomReadingBar) bottomReadingBar.classList.remove("hud-hidden");
+        if (fabContainer) fabContainer.classList.remove("hud-hidden");
+        if (btnTurnPrevExtreme) btnTurnPrevExtreme.classList.remove("hud-hidden");
+        if (btnTurnNextExtreme) btnTurnNextExtreme.classList.remove("hud-hidden");
         scheduleHudHide();
     }
 
@@ -1064,6 +1114,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
         if (topNavbar) topNavbar.classList.add("hud-hidden");
         if (bottomReadingBar) bottomReadingBar.classList.add("hud-hidden");
+        if (fabContainer) fabContainer.classList.add("hud-hidden");
+        if (btnTurnPrevExtreme) btnTurnPrevExtreme.classList.add("hud-hidden");
+        if (btnTurnNextExtreme) btnTurnNextExtreme.classList.add("hud-hidden");
     }
 
     function scheduleHudHide() {
@@ -1088,7 +1141,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.addEventListener("keydown", onUserActivity, { passive: true });
 
     // Hover detection so HUD remains visible while hovering / using controls
-    [topNavbar, bottomReadingBar, fabContainer].forEach((el) => {
+    [topNavbar, bottomReadingBar, fabContainer, btnTurnPrevExtreme, btnTurnNextExtreme].forEach((el) => {
         if (!el) return;
         el.addEventListener("mouseenter", () => {
             isMouseOverHud = true;
@@ -1108,6 +1161,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             clearTimeout(hudInactivityTimer);
             topNavbar.classList.add("hud-hidden");
             bottomReadingBar.classList.add("hud-hidden");
+            if (fabContainer) fabContainer.classList.add("hud-hidden");
+            if (btnTurnPrevExtreme) btnTurnPrevExtreme.classList.add("hud-hidden");
+            if (btnTurnNextExtreme) btnTurnNextExtreme.classList.add("hud-hidden");
         } else {
             isTabActive = true;
             showHud();
@@ -1119,6 +1175,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         clearTimeout(hudInactivityTimer);
         topNavbar.classList.add("hud-hidden");
         bottomReadingBar.classList.add("hud-hidden");
+        if (fabContainer) fabContainer.classList.add("hud-hidden");
+        if (btnTurnPrevExtreme) btnTurnPrevExtreme.classList.add("hud-hidden");
+        if (btnTurnNextExtreme) btnTurnNextExtreme.classList.add("hud-hidden");
     });
 
     window.addEventListener("focus", () => {

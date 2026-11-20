@@ -911,6 +911,141 @@ class AnnotationManager {
             this.onStatusChange("Page annotations cleared");
         }
     }
+
+    // =========================================================================
+    // Export Annotated PDF
+    // Burns vector annotations onto PDF pages losslessly via PDF-Lib
+    // =========================================================================
+    async exportAnnotatedPdf(onProgress = () => {}) {
+        const docProvider = this.engine ? this.engine.docProvider : null;
+        if (!docProvider) {
+            throw new Error("No document provider available");
+        }
+
+        // Ensure PDFLib is loaded
+        if (typeof PDFLib === "undefined") {
+            onProgress(5, "Loading PDF export engine...");
+            await new Promise((resolve, reject) => {
+                const script = document.createElement("script");
+                script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js";
+                script.onload = resolve;
+                script.onerror = () => reject(new Error("Failed to load PDF-Lib engine from CDN"));
+                document.head.appendChild(script);
+            });
+        }
+
+        const { PDFDocument, degrees } = PDFLib;
+
+        if (docProvider.isPdf && docProvider.pdfDoc) {
+            onProgress(10, "Loading document data...");
+            const rawBytes = await docProvider.pdfDoc.getData();
+            const pdfDoc = await PDFDocument.load(rawBytes);
+            const totalPages = pdfDoc.getPageCount();
+
+            for (let i = 1; i <= totalPages; i++) {
+                const annotations = this.getPageAnnotations(i);
+                if (annotations && annotations.length > 0) {
+                    const page = pdfDoc.getPage(i - 1);
+                    const { width: pWidth, height: pHeight } = page.getSize();
+                    const rotation = page.getRotation().angle;
+                    const isRotated90or270 = rotation === 90 || rotation === 270;
+                    const visualWidth = isRotated90or270 ? pHeight : pWidth;
+                    const visualHeight = isRotated90or270 ? pWidth : pHeight;
+
+                    // Render annotations on offscreen canvas at 2x resolution
+                    const scale = 2;
+                    const offscreenCanvas = document.createElement("canvas");
+                    offscreenCanvas.width = Math.round(visualWidth * scale);
+                    offscreenCanvas.height = Math.round(visualHeight * scale);
+                    const ctx = offscreenCanvas.getContext("2d");
+                    ctx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+                    this.renderPageAnnotations(ctx, i, 0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+                    const pngDataUrl = offscreenCanvas.toDataURL("image/png");
+                    const pngImage = await pdfDoc.embedPng(pngDataUrl);
+
+                    if (rotation === 0) {
+                        page.drawImage(pngImage, {
+                            x: 0,
+                            y: 0,
+                            width: pWidth,
+                            height: pHeight,
+                        });
+                    } else if (rotation === 90) {
+                        page.drawImage(pngImage, {
+                            x: pWidth,
+                            y: 0,
+                            width: visualWidth,
+                            height: visualHeight,
+                            rotate: degrees(90),
+                        });
+                    } else if (rotation === 180) {
+                        page.drawImage(pngImage, {
+                            x: pWidth,
+                            y: pHeight,
+                            width: pWidth,
+                            height: pHeight,
+                            rotate: degrees(180),
+                        });
+                    } else if (rotation === 270) {
+                        page.drawImage(pngImage, {
+                            x: 0,
+                            y: pHeight,
+                            width: visualWidth,
+                            height: visualHeight,
+                            rotate: degrees(270),
+                        });
+                    }
+                }
+
+                const pct = Math.round(15 + (i / totalPages) * 70);
+                onProgress(pct, `Processing page ${i}/${totalPages}...`);
+            }
+
+            onProgress(90, "Finalizing PDF...");
+            const modifiedPdfBytes = await pdfDoc.save();
+            const title = (docProvider.currentTitle || "document").replace(/\.pdf$/i, "");
+            return {
+                bytes: modifiedPdfBytes,
+                fileName: `${title}_annotated.pdf`,
+            };
+        } else {
+            // Default demo book export
+            onProgress(10, "Building document pages...");
+            const pdfDoc = await PDFDocument.create();
+            const totalPages = docProvider.pageCount || 1;
+
+            for (let i = 1; i <= totalPages; i++) {
+                const pageCanvas = await docProvider.renderPage(i);
+                const combinedCanvas = document.createElement("canvas");
+                combinedCanvas.width = pageCanvas.width;
+                combinedCanvas.height = pageCanvas.height;
+                const cCtx = combinedCanvas.getContext("2d");
+                cCtx.drawImage(pageCanvas, 0, 0);
+                this.renderPageAnnotations(cCtx, i, 0, 0, combinedCanvas.width, combinedCanvas.height);
+
+                const pngImage = await pdfDoc.embedPng(combinedCanvas.toDataURL("image/png"));
+                const pdfPage = pdfDoc.addPage([combinedCanvas.width * 0.75, combinedCanvas.height * 0.75]);
+                pdfPage.drawImage(pngImage, {
+                    x: 0,
+                    y: 0,
+                    width: pdfPage.getWidth(),
+                    height: pdfPage.getHeight(),
+                });
+
+                const pct = Math.round(15 + (i / totalPages) * 70);
+                onProgress(pct, `Rendering page ${i}/${totalPages}...`);
+            }
+
+            onProgress(90, "Finalizing PDF...");
+            const pdfBytes = await pdfDoc.save();
+            return {
+                bytes: pdfBytes,
+                fileName: "flipbook_annotated.pdf",
+            };
+        }
+    }
 }
 
 window.AnnotationManager = AnnotationManager;

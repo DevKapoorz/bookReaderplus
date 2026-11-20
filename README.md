@@ -33,6 +33,7 @@ An exceptionally beautiful, tactile, and simple canvas-based flipbook web applic
     - 🎨 **Palette**: Luxury colors (Crimson, Cobalt Blue, Emerald, Amber Gold, Amethyst, White).
     - 📏 **Stroke Width**: Fine (2px), Medium (4px), Bold (8px).
     - 🧽 **Eraser / Undo / Redo / Clear Page**.
+    - 📥 **Export Annotated PDF**: Burns your pen strokes, highlighters, sticky notes, and shapes losslessly into a downloadable PDF copy.
 - **LocalStorage Persistence**:
     - Annotations are automatically saved to `localStorage` keyed by document ID.
     - Reading progress is remembered: reopening a PDF resumes automatically at your last read page.

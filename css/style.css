@@ -462,13 +462,20 @@ body.light-mode [data-title]::after {
     cursor: pointer;
     z-index: 35;
     transition:
-        opacity 0.22s ease,
+        opacity 0.35s ease,
         transform 0.16s cubic-bezier(0.16, 1, 0.3, 1),
         background 0.2s ease,
         border-color 0.2s ease,
         box-shadow 0.2s ease;
     outline: none;
     opacity: 0.65;
+}
+
+.extreme-turn-btn.hud-hidden {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+    transition: opacity 0.35s ease, visibility 0.35s !important;
 }
 
 body.light-mode .extreme-turn-btn {
@@ -527,6 +534,21 @@ body.light-mode .extreme-turn-btn:hover {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+    transition:
+        opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+        visibility 0.4s;
+}
+
+.fab-container.hud-hidden {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: scale(0.82) translateY(14px) !important;
+    visibility: hidden !important;
+    transition:
+        opacity 0.4s ease,
+        transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+        visibility 0.4s !important;
 }
 
 /* The small circle with three dots */
@@ -965,6 +987,78 @@ body.light-mode .extreme-turn-btn:hover {
     background: rgba(230, 57, 70, 0.18);
     border-color: rgba(230, 57, 70, 0.45);
     color: #ff6b7a;
+}
+
+/* Export Annotated PDF Section */
+.export-pdf-section {
+    padding-top: 8px;
+    border-top: 1px solid var(--border-glass);
+}
+
+.export-pdf-btn {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 7px 12px;
+    border-radius: var(--radius-sm);
+    background: linear-gradient(135deg, rgba(196, 155, 99, 0.15), rgba(196, 155, 99, 0.05));
+    border: 1px solid rgba(196, 155, 99, 0.38);
+    color: var(--text-accent);
+    font-family: var(--font-sans);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    outline: none;
+}
+
+.export-pdf-btn svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.export-pdf-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(196, 155, 99, 0.28), rgba(196, 155, 99, 0.14));
+    border-color: rgba(196, 155, 99, 0.7);
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(196, 155, 99, 0.22);
+}
+
+.export-pdf-btn:hover:not(:disabled) svg:not(.spin-icon) {
+    transform: translateY(1px);
+}
+
+.export-pdf-btn:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.export-pdf-btn:disabled {
+    opacity: 0.75;
+    cursor: wait;
+    transform: none;
+}
+
+body.light-mode .export-pdf-btn {
+    background: linear-gradient(135deg, rgba(157, 109, 51, 0.12), rgba(157, 109, 51, 0.04));
+    border-color: rgba(157, 109, 51, 0.35);
+    color: #7b4f17;
+}
+
+body.light-mode .export-pdf-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(157, 109, 51, 0.22), rgba(157, 109, 51, 0.12));
+    border-color: rgba(157, 109, 51, 0.6);
+    color: #432b0d;
 }
 
 
