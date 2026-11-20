@@ -1742,6 +1742,7 @@ body.has-book .extreme-turn-btn {
     color: transparent;
     cursor: text;
     white-space: pre;
+    line-height: 1;
     transform-origin: 0% 0%;
 }
 

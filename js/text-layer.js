@@ -170,7 +170,8 @@ class TextLayerManager {
             const m = this.transformMatrix(viewport.transform, item.transform);
             const fontHeight = Math.hypot(m[2], m[3]);
             const left = m[4];
-            const top = m[5] - fontHeight;
+            // Shift down so the CSS text box and selection highlight align with font ascent & baseline
+            const top = m[5] - fontHeight * 0.75;
 
             const span = document.createElement("span");
             span.textContent = item.str;
